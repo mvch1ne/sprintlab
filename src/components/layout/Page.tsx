@@ -1,7 +1,3 @@
 export const Page = () => {
-  return (
-    <>
-      <div>This is the life</div>
-    </>
-  );
+  return <div className="h-full bg-amber-600">This is the main page</div>;
 };
