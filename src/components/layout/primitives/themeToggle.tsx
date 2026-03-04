@@ -18,7 +18,7 @@ export const ThemeToggle = () => {
   return (
     <Tooltip>
       <TooltipTrigger onClick={handleThemeToggle}>
-        <Button variant="outline">
+        <div className="p-2 border-border rounded-sm hover:bg-input/50 hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:bg-input/30">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -38,7 +38,7 @@ export const ThemeToggle = () => {
             <path d="M12 14.3l7.37 -7.37"></path>
             <path d="M12 19.6l8.85 -8.85"></path>
           </svg>
-        </Button>
+        </div>
       </TooltipTrigger>
       <TooltipContent>Change Theme</TooltipContent>
     </Tooltip>
