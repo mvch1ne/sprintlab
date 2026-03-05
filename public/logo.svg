@@ -1,6 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 40" fill="none">
+  <!-- Single bold motion streak -->
   <path d="M4 32 Q16 4 30 20" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Node at transition point -->
   <circle cx="30" cy="20" r="2.5" fill="#38bdf8"/>
+
+  <!-- Clean waveform -->
   <polyline
     points="30,20 35,20 38,10 41,30 44,14 47,26 50,20 60,20"
     stroke="#38bdf8"

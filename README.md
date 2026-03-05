@@ -1,1 +1,1 @@
-# SprintScope
+# SprintLab

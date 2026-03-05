@@ -10,14 +10,13 @@ export function AppLogo() {
     <HoverCard openDelay={100} closeDelay={200}>
       <HoverCardTrigger asChild>
         <button className="flex items-center gap-2 cursor-pointer group">
-          <div className="w-1.5 h-1.5 rounded-full bg-sky-500" />
           <img
             src={Logo}
             alt=""
             className="inline h-4 opacity-70 group-hover:opacity-100 transition-opacity"
           />
           <span className="text-[9px] uppercase tracking-[0.2em] text-zinc-700 dark:text-zinc-300 dark:bg-zinc-950 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors font-sans">
-            SprintScope
+            SprintLab
           </span>
         </button>
       </HoverCardTrigger>
