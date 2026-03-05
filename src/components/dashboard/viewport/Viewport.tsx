@@ -38,6 +38,7 @@ export const Viewport = () => {
   const [startFrame, setStartFrame] = useState<number | null>(null);
   const [calibration, setCalibration] = useState<CalibrationData | null>(null);
   const [calibrating, setCalibrating] = useState(false);
+  const [calibrationKey, setCalibrationKey] = useState(0);
   const [transform, setTransform] = useState<Transform>({
     scale: 1,
     x: 0,
@@ -289,10 +290,11 @@ export const Viewport = () => {
             </div>
 
             <CalibrationOverlay
+              key={calibrationKey}
               active={calibrating}
               transform={transform}
               existingCalibration={calibration}
-              onCalibrationComplete={(data) => {
+              onCalibrationComplete={(data: CalibrationData) => {
                 setCalibration(data);
                 setCalibrating(false);
               }}
@@ -365,6 +367,7 @@ export const Viewport = () => {
           calibration={calibration}
           onStartCalibration={() => {
             setIsPlaying(false);
+            setCalibrationKey((k) => k + 1);
             setCalibrating(true);
           }}
           disabled={!videoMeta}

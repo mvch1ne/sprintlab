@@ -199,11 +199,6 @@ export const CalibrationOverlay = ({
     setDistanceInput('');
   };
 
-  // Reset when activated
-  useEffect(() => {
-    if (active) handleReset();
-  }, [active]);
-
   const stepLabel =
     step === 'pick_start'
       ? 'Click to set point A'
