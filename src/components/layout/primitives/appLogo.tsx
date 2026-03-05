@@ -16,7 +16,7 @@ export function AppLogo() {
             alt=""
             className="inline h-4 opacity-70 group-hover:opacity-100 transition-opacity"
           />
-          <span className="text-[9px] uppercase tracking-[0.2em] text-zinc-700 dark:text-zinc-300 dark:bg-zinc-950 group-hover:text-zinc-700 dark:text-zinc-300 dark:group-hover:text-zinc-300 transition-colors font-sans">
+          <span className="text-[9px] uppercase tracking-[0.2em] text-zinc-700 dark:text-zinc-300 dark:bg-zinc-950 group-hover:text-zinc-700 dark:group-hover:text-zinc-300 transition-colors font-sans">
             SprintScope
           </span>
         </button>

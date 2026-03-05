@@ -260,7 +260,7 @@ export function ControlPanel() {
                   ${
                     isPlaying
                       ? 'bg-sky-500 border-sky-400 text-white shadow-[0_0_12px_rgba(14,165,233,0.4)] dark:bg-sky-600 dark:border-sky-500 dark:shadow-[0_0_12px_rgba(14,165,233,0.4)]'
-                      : 'bg-zinc-100 border-zinc-400 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 hover:border-zinc-500 dark:bg-zinc-950 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-700 dark:hover:border-zinc-1000'
+                      : 'bg-zinc-100 border-zinc-400 text-zinc-700 dark:text-zinc-300 dark:text-zinc hover:bg-zinc-200 hover:border-zinc-500 dark:bg-zinc-950 dark:border-zinc-600 dark:hover:bg-zinc-700 dark:hover:border-zinc-1000'
                   }
                 `}
                 >
@@ -293,33 +293,24 @@ export function ControlPanel() {
             <div className="h-6 w-px bg-zinc-300 dark:text-zinc-300 mx-1" />
 
             {/* Speed selector */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div>
-                  <Select
-                    value={String(speed)}
-                    onValueChange={(v) => setSpeed(Number(v))}
-                  >
-                    <SelectTrigger className="h-7 w-20 text-xs px-2 bg-zinc-50 border-zinc-400 text-zinc-700 dark:text-zinc-300 hover:border-zinc-500 hover:text-zinc-700 dark:text-zinc-300 dark:bg-zinc-950 dark:border-zinc-600 dark:bg-zinc-950 dark:hover:border-zinc-1000 dark:hover:text-zinc-200 cursor-pointer">
-                      <Gauge size={12} className="shrink-0" />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SPEED_OPTIONS.map((s) => (
-                        <SelectItem
-                          key={s}
-                          value={String(s)}
-                          className="text-xs"
-                        >
-                          {s}×
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>Playback speed</TooltipContent>
-            </Tooltip>
+            <div>
+              <Select
+                value={String(speed)}
+                onValueChange={(v) => setSpeed(Number(v))}
+              >
+                <SelectTrigger className="h-7 w-20 text-xs px-2 bg-zinc-50 border-zinc-400 text-zinc-700 dark:text-zinc-300 hover:border-zinc-500 hover:text-zinc-700 dark:bg-zinc-950 dark:border-zinc-600 dark:hover:border-zinc-1000 dark:hover:text-zinc-200 cursor-pointer">
+                  <Gauge size={12} className="shrink-0" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SPEED_OPTIONS.map((s) => (
+                    <SelectItem key={s} value={String(s)} className="text-xs">
+                      {s}×
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* Keyboard hint */}
             <div className="ml-auto flex items-center gap-2">
@@ -328,7 +319,7 @@ export function ControlPanel() {
                 ['Space', 'play'],
               ].map(([key, label]) => (
                 <div key={key} className="flex items-center gap-1">
-                  <span className="text-[9px] px-1 py-0.5 bg-zinc-100 border border-zinc-400 dark:bg-zinc-950 dark:border-zinc-600 rounded-sm text-zinc-700 dark:text-zinc-300 dark:bg-zinc-950 leading-none">
+                  <span className="text-[9px] px-1 py-0.5 bg-zinc-100 border border-zinc-400 dark:bg-zinc-950 dark:border-zinc-600 rounded-sm text-zinc-700 dark:text-zinc-300 leading-none">
                     {key}
                   </span>
                   <span className="text-[9px] text-zinc-700 dark:text-zinc-300 dark:bg-zinc-950 uppercase tracking-wide">
