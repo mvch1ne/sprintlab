@@ -60,6 +60,9 @@ export const Viewport = () => {
         });
         setCurrentTime(0);
         setIsPlaying(false);
+        setPlaybackRate(1);
+        setVolume(1);
+        setIsMuted(false);
       };
     },
     [videoMeta],
