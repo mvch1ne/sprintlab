@@ -8,7 +8,7 @@ import { ControlPanel } from './ControlPanel';
 export const Viewport = () => {
   const sectionHeights = {
     header: '1.25rem',
-    controlSection: '5rem',
+    controlSection: '10rem',
   };
 
   return (
