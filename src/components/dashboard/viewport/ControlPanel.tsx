@@ -233,7 +233,7 @@ function TimeRuler({
             style={{ left: `${pct(markerA)}%` }}
             onPointerDown={(e) => startDrag('a', e)}
           >
-            <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] text-amber-400 font-mono select-none pointer-events-none">
+            <span className="absolute top-4 left-1/2 -translate-x-1/2 text-[9px] text-amber-400 font-mono select-none pointer-events-none">
               A
             </span>
           </div>
@@ -245,7 +245,7 @@ function TimeRuler({
             style={{ left: `${pct(markerB)}%` }}
             onPointerDown={(e) => startDrag('b', e)}
           >
-            <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[9px] text-sky-400 font-mono select-none pointer-events-none">
+            <span className="absolute top-4 left-1/2 -translate-x-1/2 text-[9px] text-sky-400 font-mono select-none pointer-events-none">
               B
             </span>
           </div>
