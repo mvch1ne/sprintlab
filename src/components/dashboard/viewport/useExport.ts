@@ -141,7 +141,8 @@ export function useExport({
         await ffmpeg.exec(args);
 
         const data = await ffmpeg.readFile('output.mp4');
-        const blob = new Blob([data], { type: 'video/mp4' });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const blob = new Blob([data as any], { type: 'video/mp4' });
         const url = URL.createObjectURL(blob);
 
         // Clean up virtual FS
