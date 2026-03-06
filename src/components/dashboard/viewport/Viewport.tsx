@@ -426,7 +426,7 @@ export const Viewport = () => {
         {/* Section label */}
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-sky-500" />
-          <span className="text-[11px] uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-300 font-sans">
+          <span className="text-[11px] uppercase tracking-[0.2em] text-zinc-700 dark:text-zinc-300 font-sans">
             Viewport
           </span>
         </div>
@@ -436,20 +436,20 @@ export const Viewport = () => {
         {/* Metadata readouts */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
-            <FilePlayIcon className="h-3 w-3 text-zinc-400 dark:text-zinc-300" />
-            <span className="text-[11px] uppercase tracking-widest text-zinc-400 dark:text-zinc-300 font-sans">
+            <FilePlayIcon className="h-3 w-3 text-zinc-700 dark:text-zinc-300" />
+            <span className="text-[11px] uppercase tracking-widest text-zinc-700 dark:text-zinc-300 font-sans">
               Title
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <IconDimensions className="h-3 w-3 text-zinc-400 dark:text-zinc-300" />
-            <span className="text-[11px] uppercase tracking-widest text-zinc-400 dark:text-zinc-300 font-sans">
+            <IconDimensions className="h-3 w-3 text-zinc-700 dark:text-zinc-300" />
+            <span className="text-[11px] uppercase tracking-widest text-zinc-700 dark:text-zinc-300 font-sans">
               Dimensions
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Clock className="h-3 w-3 text-zinc-400 dark:text-zinc-300" />
-            <span className="text-[11px] uppercase tracking-widest text-zinc-400 dark:text-zinc-300 font-sans">
+            <Clock className="h-3 w-3 text-zinc-700 dark:text-zinc-300" />
+            <span className="text-[11px] uppercase tracking-widest text-zinc-700 dark:text-zinc-300 font-sans">
               Framerate
             </span>
           </div>
