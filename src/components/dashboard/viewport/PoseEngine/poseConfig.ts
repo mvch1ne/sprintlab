@@ -1,8 +1,6 @@
-// ─── MediaPipe Pose Landmark Definitions ────────────────────────────────────
-// All 33 landmarks with display names and body region groupings.
-// DEFAULT_OFF: landmarks that are hidden by default (face detail, minor points).
-// CONNECTIONS: pairs of landmark indices that form skeleton lines.
-// Lines are inferred automatically — if either endpoint is hidden, the line is skipped.
+// ─── MoveNet / COCO 17-Keypoint Definitions ──────────────────────────────────
+// MoveNet Thunder outputs 17 keypoints in COCO format.
+// Each keypoint: [y, x, score] normalised 0-1 relative to image dimensions.
 
 export interface LandmarkDef {
   index: number;
@@ -14,87 +12,52 @@ export interface LandmarkDef {
 export const LANDMARKS: LandmarkDef[] = [
   // Face
   { index: 0, name: 'Nose', region: 'face' },
-  { index: 1, name: 'Left Eye Inner', region: 'face', defaultOff: true },
-  { index: 2, name: 'Left Eye', region: 'face', defaultOff: true },
-  { index: 3, name: 'Left Eye Outer', region: 'face', defaultOff: true },
-  { index: 4, name: 'Right Eye Inner', region: 'face', defaultOff: true },
-  { index: 5, name: 'Right Eye', region: 'face', defaultOff: true },
-  { index: 6, name: 'Right Eye Outer', region: 'face', defaultOff: true },
-  { index: 7, name: 'Left Ear', region: 'face', defaultOff: true },
-  { index: 8, name: 'Right Ear', region: 'face', defaultOff: true },
-  { index: 9, name: 'Mouth Left', region: 'face', defaultOff: true },
-  { index: 10, name: 'Mouth Right', region: 'face', defaultOff: true },
+  { index: 1, name: 'Left Eye', region: 'face', defaultOff: true },
+  { index: 2, name: 'Right Eye', region: 'face', defaultOff: true },
+  { index: 3, name: 'Left Ear', region: 'face', defaultOff: true },
+  { index: 4, name: 'Right Ear', region: 'face', defaultOff: true },
   // Upper body
-  { index: 11, name: 'Left Shoulder', region: 'upper' },
-  { index: 12, name: 'Right Shoulder', region: 'upper' },
-  { index: 13, name: 'Left Elbow', region: 'upper' },
-  { index: 14, name: 'Right Elbow', region: 'upper' },
-  { index: 15, name: 'Left Wrist', region: 'upper' },
-  { index: 16, name: 'Right Wrist', region: 'upper' },
-  { index: 17, name: 'Left Pinky', region: 'upper', defaultOff: true },
-  { index: 18, name: 'Right Pinky', region: 'upper', defaultOff: true },
-  { index: 19, name: 'Left Index', region: 'upper', defaultOff: true },
-  { index: 20, name: 'Right Index', region: 'upper', defaultOff: true },
-  { index: 21, name: 'Left Thumb', region: 'upper', defaultOff: true },
-  { index: 22, name: 'Right Thumb', region: 'upper', defaultOff: true },
+  { index: 5, name: 'Left Shoulder', region: 'upper' },
+  { index: 6, name: 'Right Shoulder', region: 'upper' },
+  { index: 7, name: 'Left Elbow', region: 'upper' },
+  { index: 8, name: 'Right Elbow', region: 'upper' },
+  { index: 9, name: 'Left Wrist', region: 'upper' },
+  { index: 10, name: 'Right Wrist', region: 'upper' },
   // Core
-  { index: 23, name: 'Left Hip', region: 'core' },
-  { index: 24, name: 'Right Hip', region: 'core' },
+  { index: 11, name: 'Left Hip', region: 'core' },
+  { index: 12, name: 'Right Hip', region: 'core' },
   // Lower body
-  { index: 25, name: 'Left Knee', region: 'lower' },
-  { index: 26, name: 'Right Knee', region: 'lower' },
-  { index: 27, name: 'Left Ankle', region: 'lower' },
-  { index: 28, name: 'Right Ankle', region: 'lower' },
-  { index: 29, name: 'Left Heel', region: 'lower', defaultOff: true },
-  { index: 30, name: 'Right Heel', region: 'lower', defaultOff: true },
-  { index: 31, name: 'Left Foot Index', region: 'lower' },
-  { index: 32, name: 'Right Foot Index', region: 'lower' },
+  { index: 13, name: 'Left Knee', region: 'lower' },
+  { index: 14, name: 'Right Knee', region: 'lower' },
+  { index: 15, name: 'Left Ankle', region: 'lower' },
+  { index: 16, name: 'Right Ankle', region: 'lower' },
 ];
 
-// Skeleton connections — pairs of landmark indices
+// Skeleton connections — pairs of landmark indices (COCO convention)
 export const CONNECTIONS: [number, number][] = [
-  // Face outline
+  // Face
   [0, 1],
-  [1, 2],
-  [2, 3],
-  [3, 7],
-  [0, 4],
-  [4, 5],
-  [5, 6],
-  [6, 8],
-  [9, 10],
+  [0, 2],
+  [1, 3],
+  [2, 4],
   // Shoulders
-  [11, 12],
+  [5, 6],
   // Left arm
+  [5, 7],
+  [7, 9],
+  // Right arm
+  [6, 8],
+  [8, 10],
+  // Torso
+  [5, 11],
+  [6, 12],
+  [11, 12],
+  // Left leg
   [11, 13],
   [13, 15],
-  [15, 17],
-  [15, 19],
-  [15, 21],
-  [17, 19],
-  // Right arm
+  // Right leg
   [12, 14],
   [14, 16],
-  [16, 18],
-  [16, 20],
-  [16, 22],
-  [18, 20],
-  // Torso
-  [11, 23],
-  [12, 24],
-  [23, 24],
-  // Left leg
-  [23, 25],
-  [25, 27],
-  [27, 29],
-  [27, 31],
-  [29, 31],
-  // Right leg
-  [24, 26],
-  [26, 28],
-  [28, 30],
-  [28, 32],
-  [30, 32],
 ];
 
 // Region colors
@@ -105,7 +68,6 @@ export const REGION_COLORS: Record<LandmarkDef['region'], string> = {
   lower: '#4ade80', // green
 };
 
-// Build default visibility map from LANDMARKS
 export const buildDefaultVisibility = (): Record<number, boolean> => {
   const map: Record<number, boolean> = {};
   for (const lm of LANDMARKS) {
