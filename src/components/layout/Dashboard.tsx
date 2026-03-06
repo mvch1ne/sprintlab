@@ -2,8 +2,8 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Viewport } from '../dashboard/viewport/Viewport';
 import { Telemetry } from '../dashboard/telemetry/Telemetry';
-import { StatusProvider } from '../dashboard/viewport/StatusContext';
-import { StatusBar } from '../dashboard/viewport/StatusBar';
+import { StatusProvider } from '../dashboard/viewport/StatusBar/StatusContext';
+import { StatusBar } from '../dashboard/viewport/StatusBar/StatusBar';
 import {
   Tooltip,
   TooltipContent,

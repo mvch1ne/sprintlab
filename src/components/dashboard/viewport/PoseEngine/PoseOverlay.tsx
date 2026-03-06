@@ -4,8 +4,11 @@
 // Accepts a visibility map and hover-labels toggle from parent.
 
 import { useEffect, useRef, useCallback } from 'react';
-import type { NormalizedLandmark, PoseResult } from './usePoseLandmarker';
-import { LANDMARKS, CONNECTIONS, REGION_COLORS } from './poseConfig';
+import type {
+  NormalizedLandmark,
+  PoseResult,
+} from './PoseEngine/usePoseLandmarker';
+import { LANDMARKS, CONNECTIONS, REGION_COLORS } from './PoseEngine/poseConfig';
 
 interface Props {
   result: PoseResult | null;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useStatus } from './StatusContext';
+import { useStatus } from './StatusBar/StatusContext';
 
 // Blink keyframe injected once
 let blinkInjected = false;

@@ -31,8 +31,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { CalibrationData } from './CalibrationOverlay';
-import type { LandmarkerStatus } from './usePoseLandmarker';
+import type { CalibrationData } from './CalibrationAndMeasurements/CalibrationOverlay';
+import type { LandmarkerStatus } from './PoseEngine/usePoseLandmarker';
 
 const SPEED_OPTIONS = [0.25, 0.5, 1, 1.5, 2, 4];
 
