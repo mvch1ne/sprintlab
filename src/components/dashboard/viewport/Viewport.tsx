@@ -785,19 +785,19 @@ export const Viewport = () => {
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
             <div className="flex flex-col items-center gap-3">
               <div className="w-12 h-12 rounded-sm border border-zinc-700 flex items-center justify-center">
-                <Upload className="h-5 w-5 text-zinc-500" />
+                <Upload className="h-5 w-5 text-zinc-500 dark:text-zinc-300" />
               </div>
               <div className="flex flex-col items-center gap-1">
-                <span className="text-[9px] uppercase tracking-[0.2em] text-zinc-500 font-sans">
+                <span className="text-[0.8rem] uppercase tracking-[0.2em] text-zinc-500  dark:text-zinc-300 font-sans">
                   No video loaded
                 </span>
-                <span className="text-[9px] text-zinc-600 font-sans">
+                <span className="text-[0.8rem] text-zinc-600  dark:text-zinc-300 font-sans">
                   Upload a video to begin analysis
                 </span>
               </div>
               <button
                 onClick={handleUploadClick}
-                className="mt-1 px-3 py-1.5 rounded-sm border border-zinc-700 text-[9px] uppercase tracking-widest text-zinc-400 hover:border-sky-500 hover:text-sky-400 transition-all duration-150 cursor-pointer font-sans"
+                className="mt-1 px-3 py-1.5 rounded-sm border border-zinc-700 text-[0.8rem] uppercase tracking-widest text-zinc-400  dark:text-zinc-300 hover:border-sky-500 hover:text-sky-400 transition-all duration-150 cursor-pointer font-sans"
               >
                 Upload Video
               </button>
