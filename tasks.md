@@ -2,10 +2,14 @@
 
 TODO
 
-- Will need to refactor the folders to create separation of concerns
-
-- Switch from MediaPipe to something else like MMPose or OpenPose or MoveNet for accuracy. Will need a backend server in Python? Possible to host on Firebase? If using a separate backend server, will probably have to account for free tiers hibernating or shutting down after inactivity so will have to warm it up?
+- MediaPipe sucks. Switch from MediaPipe to something else like MMPose or OpenPose or MoveNet for accuracy. Will need a backend server in Python? Possible to host on Firebase? If using a separate backend server, will probably have to account for free tiers hibernating or shutting down after inactivity so will have to warm it up?
 - Work on the telemetry section
+
+## Backend
+
+- Try MoveNet Thunder. If doesn't work go for RTMPose built on MMPose
+- Deploy to Fly.io because free tier is more generous and doesn't hibernate?
+-
 
 ## Documentation
 
