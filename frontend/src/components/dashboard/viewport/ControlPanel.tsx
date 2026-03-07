@@ -32,7 +32,14 @@ import {
 import type { CalibrationData } from './CalibrationAndMeasurements/CalibrationOverlay';
 import type { LandmarkerStatus } from './PoseEngine/usePoseLandmarker';
 
-const SPEED_OPTIONS = [0.25, 0.5, 1, 1.5, 2, 4];
+const SPEED_OPTIONS = [0.0625, 0.125, 0.25, 0.5, 1, 1.5, 2, 4];
+const SPEED_LABELS: Record<number, string> = {
+  0.0625: '1/16×',
+  0.125: '1/8×',
+  0.25: '1/4×',
+  0.5: '1/2×',
+};
+const speedLabel = (s: number) => SPEED_LABELS[s] ?? `${s}×`;
 
 interface ControlPanelProps {
   currentFrame: number;
@@ -523,7 +530,7 @@ export function ControlPanel({
               <SelectContent>
                 {SPEED_OPTIONS.map((s) => (
                   <SelectItem key={s} value={String(s)} className="text-xs">
-                    {s}×
+                    {speedLabel(s)}
                   </SelectItem>
                 ))}
               </SelectContent>

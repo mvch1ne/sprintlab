@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { FilePlayIcon, Clock, Upload } from 'lucide-react';
+import { FilePlayIcon, Clock, Upload, Layers, Box } from 'lucide-react';
 import { IconDimensions } from '@tabler/icons-react';
 import { VideoLayer } from './VideoLayer';
 import { ControlPanel } from './ControlPanel';
@@ -11,6 +11,7 @@ import type { Measurement } from './CalibrationAndMeasurements/MeasurementOverla
 import { PoseOverlay } from './PoseEngine/PoseOverlay';
 import { PosePanel } from './PoseEngine/PosePanel';
 import { usePoseLandmarker } from './PoseEngine/usePoseLandmarker';
+import type { Keypoint } from './PoseEngine/usePoseLandmarker';
 import { LANDMARKS, buildDefaultVisibility } from './PoseEngine/poseConfig';
 import type { LandmarkDef } from './PoseEngine/poseConfig';
 import { TrimCropPanel } from './TrimAndCrop/TrimCropPanel';
@@ -69,10 +70,13 @@ export const Viewport = () => {
   const [poseEnabled, setPoseEnabled] = useState(false);
   const [showPosePanel, setShowPosePanel] = useState(false);
   const [showPoseLabels, setShowPoseLabels] = useState(true);
+  const [skeletonOnly, setSkeletonOnly] = useState(false);
+  const [mode3D, setMode3D] = useState(false);
   const [landmarkVisibility, setLandmarkVisibility] = useState<
     Record<number, boolean>
   >(buildDefaultVisibility);
   const videoElRef = useRef<HTMLVideoElement | null>(null);
+  const poseDrawRef = useRef<((kp: Keypoint[]) => void) | null>(null);
   const {
     status: poseStatus,
     progress: poseProgress,
@@ -449,6 +453,50 @@ export const Viewport = () => {
               {zoomLabel} ✕
             </button>
           )}
+          {videoMeta && poseEnabled && poseStatus === 'ready' && (
+            <>
+              <div className="h-3 w-px bg-zinc-400 dark:bg-zinc-600" />
+              {/* View mode pill — Video / Skeleton */}
+              <div className="flex items-center border border-zinc-400 dark:border-zinc-600 rounded-sm overflow-hidden">
+                {(['video', 'skeleton'] as const).map((mode) => {
+                  const active =
+                    mode === 'skeleton' ? skeletonOnly : !skeletonOnly;
+                  return (
+                    <button
+                      key={mode}
+                      onClick={() => setSkeletonOnly(mode === 'skeleton')}
+                      className={`flex items-center gap-1 px-2 h-4 text-[10px] uppercase tracking-widest transition-colors cursor-pointer
+                        ${
+                          active
+                            ? 'bg-zinc-800 dark:bg-zinc-200 text-zinc-100 dark:text-zinc-900'
+                            : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
+                        }`}
+                    >
+                      {mode === 'video' ? (
+                        <Layers className="w-2.5 h-2.5" />
+                      ) : (
+                        <Box className="w-2.5 h-2.5" />
+                      )}
+                      <span>{mode}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {/* 3D mode indicator */}
+              <button
+                onClick={() => setMode3D((v) => !v)}
+                className={`flex items-center gap-1 h-4 px-2 text-[10px] uppercase tracking-widest border rounded-sm transition-colors cursor-pointer
+                  ${
+                    mode3D
+                      ? 'bg-violet-500/20 border-violet-500/50 text-violet-400'
+                      : 'border-zinc-400 dark:border-zinc-600 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
+                  }`}
+              >
+                <Box className="w-2.5 h-2.5" />
+                <span>3D</span>
+              </button>
+            </>
+          )}
         </div>
         <div className="ml-auto flex items-center gap-3">
           {videoMeta && (
@@ -490,6 +538,7 @@ export const Viewport = () => {
       >
         {videoMeta ? (
           <>
+            {skeletonOnly && <div className="absolute inset-0 bg-zinc-950" />}
             <div
               className="absolute inset-0"
               style={{
@@ -505,6 +554,7 @@ export const Viewport = () => {
                 currentFrame={currentFrame}
                 playbackRate={playbackRate}
                 isPlaying={isPlaying}
+                skeletonOnly={skeletonOnly}
                 onFrameChange={setCurrentFrame}
                 onEnded={() => {
                   setIsPlaying(false);
@@ -513,6 +563,18 @@ export const Viewport = () => {
                 onReady={(el) => {
                   videoElRef.current = el;
                 }}
+                getKeypoints={
+                  poseEnabled && poseStatus === 'ready'
+                    ? getKeypoints
+                    : undefined
+                }
+                onKeypoints={
+                  poseEnabled && poseStatus === 'ready'
+                    ? (kp) => {
+                        poseDrawRef.current?.(kp);
+                      }
+                    : undefined
+                }
               />
               {poseEnabled && poseStatus === 'ready' && (
                 <PoseOverlay
@@ -523,6 +585,7 @@ export const Viewport = () => {
                   videoNatHeight={videoMeta.height}
                   visibilityMap={landmarkVisibility}
                   showLabels={showPoseLabels}
+                  drawRef={poseDrawRef}
                 />
               )}
             </div>

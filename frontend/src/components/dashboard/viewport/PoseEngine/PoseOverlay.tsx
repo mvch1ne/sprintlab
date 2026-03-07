@@ -1,30 +1,25 @@
 // ─── Pose Overlay Canvas ──────────────────────────────────────────────────────
-// Canvas is an exact sibling of the <video> element — same CSS size always.
-// Both are inside the transform wrapper, so we never use getBoundingClientRect.
-// Keypoints are raw pixel coords from the inference frame.
-// We compute the letterbox rect (object-fit: contain) from the canvas size +
-// video's natural dimensions, then scale kp pixel coords into that rect.
-
 import { useEffect, useRef, useCallback } from 'react';
 import type { Keypoint } from './usePoseLandmarker';
 import { LANDMARKS, CONNECTIONS, REGION_COLORS } from './poseConfig';
 
 interface Props {
   keypoints: Keypoint[];
-  frameWidth: number; // inference frame pixel width  (from backend)
-  frameHeight: number; // inference frame pixel height (from backend)
-  videoNatWidth: number; // video.videoWidth  (natural dims for letterbox calc)
-  videoNatHeight: number; // video.videoHeight
+  frameWidth: number;
+  frameHeight: number;
+  videoNatWidth: number;
+  videoNatHeight: number;
   visibilityMap: Record<number, boolean>;
   showLabels: boolean;
+  // Imperative ref — assign to allow rAF loop to call draw() directly
+  // without going through React state (eliminates pose lag at non-1x speeds)
+  drawRef?: React.MutableRefObject<((kp: Keypoint[]) => void) | null>;
 }
 
 const SCORE_THRESHOLD = 0.43;
 const DOT_RADIUS = 4;
 const LINE_WIDTH = 1.5;
 
-// Compute the sub-rect the video occupies inside a container of (cw×ch)
-// when rendered with object-fit: contain using natural aspect ratio (nw×nh)
 function letterboxRect(cw: number, ch: number, nw: number, nh: number) {
   if (!nw || !nh) return { left: 0, top: 0, width: cw, height: ch };
   const scale = Math.min(cw / nw, ch / nh);
@@ -41,11 +36,40 @@ export const PoseOverlay = ({
   videoNatHeight,
   visibilityMap,
   showLabels,
+  drawRef,
 }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mousePosRef = useRef<{ x: number; y: number } | null>(null);
 
-  const draw = useCallback(() => {
+  // Keep latest non-keypoint params in refs so the imperative draw fn is
+  // always fresh without needing to be recreated
+  const frameWidthRef = useRef(frameWidth);
+  const frameHeightRef = useRef(frameHeight);
+  const natWidthRef = useRef(videoNatWidth);
+  const natHeightRef = useRef(videoNatHeight);
+  const visibilityMapRef = useRef(visibilityMap);
+  const showLabelsRef = useRef(showLabels);
+  useEffect(() => {
+    frameWidthRef.current = frameWidth;
+  }, [frameWidth]);
+  useEffect(() => {
+    frameHeightRef.current = frameHeight;
+  }, [frameHeight]);
+  useEffect(() => {
+    natWidthRef.current = videoNatWidth;
+  }, [videoNatWidth]);
+  useEffect(() => {
+    natHeightRef.current = videoNatHeight;
+  }, [videoNatHeight]);
+  useEffect(() => {
+    visibilityMapRef.current = visibilityMap;
+  }, [visibilityMap]);
+  useEffect(() => {
+    showLabelsRef.current = showLabels;
+  }, [showLabels]);
+
+  // ── Core imperative draw — accepts keypoints directly ────────────────────
+  const drawKp = useCallback((kp: Keypoint[]) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d')!;
@@ -57,36 +81,31 @@ export const PoseOverlay = ({
     canvas.height = ch;
     ctx.clearRect(0, 0, cw, ch);
 
-    if (!keypoints.length || !frameWidth || !frameHeight) return;
+    const fw = frameWidthRef.current;
+    const fh = frameHeightRef.current;
+    if (!kp.length || !fw || !fh) return;
 
-    // Where the video image actually sits inside the canvas
-    const lb = letterboxRect(cw, ch, videoNatWidth, videoNatHeight);
+    const lb = letterboxRect(cw, ch, natWidthRef.current, natHeightRef.current);
+    const sx = lb.width / fw;
+    const sy = lb.height / fh;
 
-    // Keypoints are in inference-frame pixels. The inference frame was captured
-    // at frameWidth×frameHeight from the same source, so we scale into the
-    // letterbox rect via frameWidth/frameHeight (not natural dims).
-    const sx = lb.width / frameWidth;
-    const sy = lb.height / frameHeight;
-
-    const toCanvas = (kp: Keypoint) => ({
-      x: lb.left + kp.x * sx,
-      y: lb.top + kp.y * sy,
+    const toCanvas = (p: Keypoint) => ({
+      x: lb.left + p.x * sx,
+      y: lb.top + p.y * sy,
     });
-
+    const vm = visibilityMapRef.current;
     const lmMap = new Map(LANDMARKS.map((l) => [l.index, l]));
 
-    const isVisible = (idx: number): boolean => {
-      if (!visibilityMap[idx]) return false;
-      const kp = keypoints[idx];
-      if (!kp) return false;
-      return kp.score >= SCORE_THRESHOLD;
+    const isVisible = (idx: number) => {
+      if (!vm[idx]) return false;
+      const p = kp[idx];
+      return !!p && p.score >= SCORE_THRESHOLD;
     };
 
-    // Connections
     for (const [a, b] of CONNECTIONS) {
       if (!isVisible(a) || !isVisible(b)) continue;
-      const pa = toCanvas(keypoints[a]);
-      const pb = toCanvas(keypoints[b]);
+      const pa = toCanvas(kp[a]);
+      const pb = toCanvas(kp[b]);
       const rA = lmMap.get(a)?.region ?? 'upper';
       const rB = lmMap.get(b)?.region ?? 'upper';
       const color = REGION_COLORS[rA === rB ? rA : rB];
@@ -98,10 +117,9 @@ export const PoseOverlay = ({
       ctx.stroke();
     }
 
-    // Dots
     for (const lmDef of LANDMARKS) {
       if (!isVisible(lmDef.index)) continue;
-      const { x, y } = toCanvas(keypoints[lmDef.index]);
+      const { x, y } = toCanvas(kp[lmDef.index]);
       const color = REGION_COLORS[lmDef.region];
       ctx.beginPath();
       ctx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
@@ -112,8 +130,7 @@ export const PoseOverlay = ({
       ctx.stroke();
     }
 
-    // Hover labels
-    if (showLabels && mousePosRef.current) {
+    if (showLabelsRef.current && mousePosRef.current) {
       const { x: mx, y: my } = mousePosRef.current;
       let closest: {
         dist: number;
@@ -123,7 +140,7 @@ export const PoseOverlay = ({
       } | null = null;
       for (const lmDef of LANDMARKS) {
         if (!isVisible(lmDef.index)) continue;
-        const { x, y } = toCanvas(keypoints[lmDef.index]);
+        const { x, y } = toCanvas(kp[lmDef.index]);
         const dist = Math.hypot(x - mx, y - my);
         if (dist < 24 && (!closest || dist < closest.dist)) {
           closest = { dist, label: lmDef.name, x, y };
@@ -146,42 +163,49 @@ export const PoseOverlay = ({
         ctx.fillText(closest.label, bx, by + 8);
       }
     }
-  }, [
-    keypoints,
-    frameWidth,
-    frameHeight,
-    videoNatWidth,
-    videoNatHeight,
-    visibilityMap,
-    showLabels,
-  ]);
+  }, []); // stable — reads everything from refs
 
+  // ── Expose imperative draw to parent via drawRef ─────────────────────────
   useEffect(() => {
-    draw();
-  }, [draw]);
+    if (drawRef) drawRef.current = drawKp;
+    return () => {
+      if (drawRef) drawRef.current = null;
+    };
+  }, [drawRef, drawKp]);
+
+  // Keep latest keypoints in a ref so resize/visibility redraws always have them
+  const currentKpRef = useRef<Keypoint[]>(keypoints);
+  useEffect(() => {
+    currentKpRef.current = keypoints;
+    drawKp(keypoints);
+  }, [keypoints, drawKp]);
+
+  // Redraw when any display-affecting prop changes
+  useEffect(() => {
+    drawKp(currentKpRef.current);
+  }, [visibilityMap, showLabels, drawKp]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ro = new ResizeObserver(() => draw());
+    const ro = new ResizeObserver(() => drawKp(currentKpRef.current));
     ro.observe(canvas);
     return () => ro.disconnect();
-  }, [draw]);
+  }, [drawKp]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     mousePosRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    draw();
+    drawKp(keypoints);
   };
   const handleMouseLeave = () => {
     mousePosRef.current = null;
-    draw();
+    drawKp(keypoints);
   };
 
   return (
     <canvas
       ref={canvasRef}
-      // pointer-events-auto so mouse events reach the canvas for hover labels
       className="absolute inset-0 w-full h-full pointer-events-auto"
       style={{ cursor: 'default' }}
       onMouseMove={handleMouseMove}

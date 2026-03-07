@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import type { Keypoint } from './PoseEngine/usePoseLandmarker';
 
 interface VideoLayerProps {
   src: string;
@@ -7,9 +8,14 @@ interface VideoLayerProps {
   currentFrame: number;
   playbackRate: number;
   isPlaying: boolean;
+  skeletonOnly: boolean;
   onFrameChange: (frame: number) => void;
   onEnded: () => void;
   onReady: (videoEl: HTMLVideoElement) => void;
+  // Optional: if provided, called each rAF tick with the current frame's
+  // keypoints so PoseOverlay can redraw without going through React state.
+  getKeypoints?: (frame: number) => Keypoint[];
+  onKeypoints?: (kp: Keypoint[]) => void;
 }
 
 export const VideoLayer = ({
@@ -19,21 +25,26 @@ export const VideoLayer = ({
   currentFrame,
   playbackRate,
   isPlaying,
+  skeletonOnly,
   onFrameChange,
   onEnded,
   onReady,
+  getKeypoints,
+  onKeypoints,
 }: VideoLayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const rafRef = useRef<number | null>(null);
 
-  // Refs read by the rAF loop — never stale, never cause loop restarts
   const fpsRef = useRef(fps);
   const totalFramesRef = useRef(totalFrames);
   const isPlayingRef = useRef(isPlaying);
   const playbackRateRef = useRef(playbackRate);
   const currentFrameRef = useRef(currentFrame);
+  const skeletonOnlyRef = useRef(skeletonOnly);
+  const getKeypointsRef = useRef(getKeypoints);
+  const onKeypointsRef = useRef(onKeypoints);
 
   useEffect(() => {
     fpsRef.current = fps;
@@ -47,14 +58,34 @@ export const VideoLayer = ({
   useEffect(() => {
     playbackRateRef.current = playbackRate;
   }, [playbackRate]);
+  useEffect(() => {
+    skeletonOnlyRef.current = skeletonOnly;
+  }, [skeletonOnly]);
+  useEffect(() => {
+    getKeypointsRef.current = getKeypoints;
+  }, [getKeypoints]);
+  useEffect(() => {
+    onKeypointsRef.current = onKeypoints;
+  }, [onKeypoints]);
 
-  // ── Draw whatever frame the video element is currently on ─────────────────
+  // ── Draw video frame to canvas (skipped in skeleton-only mode) ───────────
   const draw = useCallback(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const ctx = ctxRef.current;
     if (!video || !canvas || !ctx) return;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    if (skeletonOnlyRef.current) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    } else {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
+  }, []);
+
+  // ── Emit keypoints for current frame ─────────────────────────────────────
+  const emitKeypoints = useCallback((frame: number) => {
+    const gk = getKeypointsRef.current;
+    const ok = onKeypointsRef.current;
+    if (gk && ok) ok(gk(frame));
   }, []);
 
   // ── Load new src ──────────────────────────────────────────────────────────
@@ -62,7 +93,6 @@ export const VideoLayer = ({
     const video = videoRef.current;
     if (!video || !src) return;
 
-    // Stop any running loop before changing src
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
@@ -85,14 +115,24 @@ export const VideoLayer = ({
       video.currentTime = 0;
     };
 
+    const onSeeked = () => {
+      draw();
+      emitKeypoints(currentFrameRef.current);
+    };
+
     video.addEventListener('loadedmetadata', onMeta, { once: true });
-    video.addEventListener('seeked', draw);
+    video.addEventListener('seeked', onSeeked);
     return () => {
       video.removeEventListener('loadedmetadata', onMeta);
-      video.removeEventListener('seeked', draw);
+      video.removeEventListener('seeked', onSeeked);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src]);
+
+  // ── Redraw when skeletonOnly toggles (no seek needed) ────────────────────
+  useEffect(() => {
+    draw();
+  }, [skeletonOnly, draw]);
 
   // ── Sync playbackRate ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -100,25 +140,23 @@ export const VideoLayer = ({
     if (video) video.playbackRate = playbackRate;
   }, [playbackRate]);
 
-  // ── Always keep currentFrameRef in sync with the prop ────────────────────
+  // ── Always keep currentFrameRef in sync ──────────────────────────────────
   useEffect(() => {
     currentFrameRef.current = currentFrame;
   }, [currentFrame]);
 
-  // ── Seek on scrub / step (only when paused) ───────────────────────────────
+  // ── Seek on scrub/step (paused only) ─────────────────────────────────────
   useEffect(() => {
     if (isPlaying) return;
     const video = videoRef.current;
     if (!video || !fps) return;
-    // Seek to the centre of the frame window to avoid boundary ambiguity
     const target = (currentFrame + 0.5) / fps;
     if (Math.abs(video.currentTime - target) > 0.5 / fps) {
       video.currentTime = target;
-      // draw() fires via the 'seeked' listener
     }
   }, [currentFrame, isPlaying, fps]);
 
-  // ── Playback ──────────────────────────────────────────────────────────────
+  // ── Playback loop ─────────────────────────────────────────────────────────
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -142,12 +180,15 @@ export const VideoLayer = ({
       if (frame !== currentFrameRef.current) {
         currentFrameRef.current = frame;
         draw();
+        // Emit keypoints in the same tick — no React state round-trip
+        emitKeypoints(frame);
         onFrameChange(frame);
       }
 
       if (video.ended || frame >= totalFramesRef.current - 1) {
         currentFrameRef.current = totalFramesRef.current - 1;
         draw();
+        emitKeypoints(totalFramesRef.current - 1);
         onFrameChange(totalFramesRef.current - 1);
         onEnded();
         return;
@@ -156,8 +197,6 @@ export const VideoLayer = ({
       rafRef.current = requestAnimationFrame(tick);
     };
 
-    // Always seek to exactly where currentFrame says before playing.
-    // This resolves both the "ended" restart and any mid-seek race condition.
     const targetTime = currentFrameRef.current / fpsRef.current;
     video.currentTime = targetTime;
     video.addEventListener(

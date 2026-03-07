@@ -2,10 +2,6 @@
 
 TODO
 
-When return @ 4pm: Drastic but how about we do away with media (the video tag) so that it doesn't constrain us and now we just play through the frames? There will be no audio but I don't mind. We can implement all the other video like functions: play, pause, jump to start, jump to end, step back, step forward, play speed, etc. So that when we get the pause data, we can reconstruct the 'media' precisely based on that. And yet of course somehow if the user has done anything in the interface (calibration, distance and angle measurements, etc) we still have access to that. Thoughts?
-Also, let's not round the framerate we get. Use it as it is and work with what the pose engine returns. It looks reliable as fuck. Maybe even return the fps value from the backend too.
-Also, I think the script we wrote to infer is doing too much. Use the simple one from the rtmlib examples and the ones I have been playing with.
-
 - Add the feature to place markers (with optional labels) and then retroactively measure the distance between them
 - The button to turn off all pose landmarks doesn't work
 - Pose landmark is kinda slow from the server. Even with just CPU, the disparity is wildly different. Something that takes just 3 seconds jumps to close to 2 minutes just because I wrap it on a server? Even when both the frontend and server are both running on the same machine's localhost. Imagine how slow it will be when I host them separately? Need to optimize this.
