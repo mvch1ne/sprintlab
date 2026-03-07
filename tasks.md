@@ -6,7 +6,7 @@ When return @ 4pm: Drastic but how about we do away with media (the video tag) s
 
 - Add the feature to place markers (with optional labels) and then retroactively measure the distance between them
 - The button to turn off all pose landmarks doesn't work
-- Pose landmark is kinda slow from the server. Find a way to use GPU?
+- Pose landmark is kinda slow from the server. Even with just CPU, the disparity is wildly different. Something that takes just 3 seconds jumps to close to 2 minutes just because I wrap it on a server? Even when both the frontend and server are both running on the same machine's localhost. Imagine how slow it will be when I host them separately? Need to optimize this.
 - When using the export option, let the draw box disappear after I close the panel.
 - Switched to Movenet. Slightly more reliable than MediaPipe but still wildly inaccurate. Need to try something more accurate. If running a backend with Python is the cost then so be it. RTMPose or MMPose. I think they even have 3D versions? Could use that straight for the ThreeJS?
 - Work on the telemetry section
