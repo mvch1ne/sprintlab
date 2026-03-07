@@ -1,6 +1,7 @@
 // ─── Pose Overlay Canvas ──────────────────────────────────────────────────────
 import { useEffect, useRef, useCallback } from 'react';
 import type { Keypoint } from './usePoseLandmarker';
+import type { GroundContactEvent } from '../../useSprintMetrics';
 import { LANDMARKS, CONNECTIONS, REGION_COLORS } from './poseConfig';
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
   // Imperative ref — assign to allow rAF loop to call draw() directly
   // without going through React state (eliminates pose lag at non-1x speeds)
   drawRef?: React.MutableRefObject<((kp: Keypoint[]) => void) | null>;
+  groundContacts?: GroundContactEvent[]; // stride length annotations
 }
 
 const SCORE_THRESHOLD = 0.43;
@@ -37,6 +39,7 @@ export const PoseOverlay = ({
   visibilityMap,
   showLabels,
   drawRef,
+  groundContacts = [],
 }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mousePosRef = useRef<{ x: number; y: number } | null>(null);
@@ -49,6 +52,7 @@ export const PoseOverlay = ({
   const natHeightRef = useRef(videoNatHeight);
   const visibilityMapRef = useRef(visibilityMap);
   const showLabelsRef = useRef(showLabels);
+  const groundContactsRef = useRef(groundContacts);
   useEffect(() => {
     frameWidthRef.current = frameWidth;
   }, [frameWidth]);
@@ -67,6 +71,9 @@ export const PoseOverlay = ({
   useEffect(() => {
     showLabelsRef.current = showLabels;
   }, [showLabels]);
+  useEffect(() => {
+    groundContactsRef.current = groundContacts;
+  }, [groundContacts]);
 
   // ── Core imperative draw — accepts keypoints directly ────────────────────
   const drawKp = useCallback((kp: Keypoint[]) => {
@@ -128,6 +135,67 @@ export const PoseOverlay = ({
       ctx.strokeStyle = 'rgba(0,0,0,0.6)';
       ctx.lineWidth = 1;
       ctx.stroke();
+    }
+
+    // ── Stride length annotations ─────────────────────────────────────────
+    const contacts = groundContactsRef.current;
+    if (contacts.length > 0 && fw && fh) {
+      const toC = (p: { x: number; y: number }) => ({
+        x: lb.left + p.x * sx,
+        y: lb.top + p.y * sy,
+      });
+
+      // Group by foot
+      const left = contacts.filter((c) => c.foot === 'left');
+      const right = contacts.filter((c) => c.foot === 'right');
+
+      const drawStridePair = (
+        a: GroundContactEvent,
+        b: GroundContactEvent,
+        color: string,
+        labelColor: string,
+      ) => {
+        const pa = toC(a.contactSite);
+        const pb = toC(b.contactSite);
+        const groundY = Math.max(pa.y, pb.y) + 18;
+
+        // Horizontal bracket
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(pa.x, groundY);
+        ctx.lineTo(pb.x, groundY);
+        ctx.stroke();
+        // Tick marks
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(pa.x, groundY - 4);
+        ctx.lineTo(pa.x, groundY + 4);
+        ctx.moveTo(pb.x, groundY - 4);
+        ctx.lineTo(pb.x, groundY + 4);
+        ctx.stroke();
+        // Label
+        if (b.strideLength !== null) {
+          const mid = (pa.x + pb.x) / 2;
+          const label =
+            b.strideLength > 10
+              ? `${b.strideLength.toFixed(0)}px`
+              : `${b.strideLength.toFixed(2)}m`;
+          ctx.font = '9px "DM Mono", monospace';
+          ctx.fillStyle = labelColor;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(label, mid, groundY - 5);
+        }
+        ctx.restore();
+      };
+
+      for (let i = 1; i < left.length; i++)
+        drawStridePair(left[i - 1], left[i], '#4ade8099', '#4ade80');
+      for (let i = 1; i < right.length; i++)
+        drawStridePair(right[i - 1], right[i], '#fb923c99', '#fb923c');
     }
 
     if (showLabelsRef.current && mousePosRef.current) {

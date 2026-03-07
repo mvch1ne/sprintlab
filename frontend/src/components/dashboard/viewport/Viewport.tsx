@@ -20,6 +20,9 @@ import { CropOverlay } from './TrimAndCrop/CropOverlay';
 import { useExport } from './videoUtilities/useExport';
 import { probeVideoFps } from './videoUtilities/probeVideoFps';
 import { useStatus } from './StatusBar/StatusContext';
+import { useVideoContext } from '../VideoContext';
+import { usePose } from '../PoseContext';
+import { useSprintMetrics } from '../useSprintMetrics';
 
 interface VideoMeta {
   src: string;
@@ -113,6 +116,45 @@ export const Viewport = () => {
   const totalFrames =
     poseTotalFrames > 0 ? poseTotalFrames : (videoMeta?.totalFrames ?? 0);
   const currentTime = totalFrames > 0 ? currentFrame / fps : 0;
+
+  // ── Sprint metrics — computed once when pose data is ready ────────────────
+  const metrics = useSprintMetrics(
+    getKeypoints,
+    poseStatus === 'ready' ? totalFrames : 0,
+    fps,
+    calibration,
+  );
+
+  // ── Publish to VideoContext so Telemetry can read without prop-drilling ────
+  const {
+    setCurrentFrame: ctxSetFrame,
+    setFps: ctxSetFps,
+    setTotalFrames: ctxSetTotal,
+    setCalibration: ctxSetCal,
+    setMetrics: ctxSetMetrics,
+  } = useVideoContext();
+
+  useEffect(() => {
+    ctxSetFrame(currentFrame);
+  }, [currentFrame, ctxSetFrame]);
+  useEffect(() => {
+    ctxSetFps(fps);
+  }, [fps, ctxSetFps]);
+  useEffect(() => {
+    ctxSetTotal(totalFrames);
+  }, [totalFrames, ctxSetTotal]);
+  useEffect(() => {
+    ctxSetCal(calibration);
+  }, [calibration, ctxSetCal]);
+  useEffect(() => {
+    ctxSetMetrics(metrics);
+  }, [metrics, ctxSetMetrics]);
+
+  // Publish pose status into PoseContext so Telemetry can show correct empty state
+  const { setStatus: ctxSetPoseStatus } = usePose();
+  useEffect(() => {
+    ctxSetPoseStatus(poseEnabled ? poseStatus : 'idle');
+  }, [poseEnabled, poseStatus, ctxSetPoseStatus]);
 
   const {
     exportStatus,
@@ -589,6 +631,7 @@ export const Viewport = () => {
                   visibilityMap={landmarkVisibility}
                   showLabels={showPoseLabels}
                   drawRef={poseDrawRef}
+                  groundContacts={metrics?.groundContacts}
                 />
               )}
             </div>
