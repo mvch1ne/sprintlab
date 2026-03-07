@@ -2,10 +2,10 @@
 
 TODO
 
+- Going to work on telemetry
 - Add the feature to place markers (with optional labels) and then retroactively measure the distance between them
 - So many face options in poseconfig panel. Hide most?
 - When using the export option, let the draw box disappear after I close the panel.
-- Work on the telemetry section
 
 ## Backend
 
