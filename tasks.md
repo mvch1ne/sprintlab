@@ -2,12 +2,15 @@
 
 TODO
 
+- Figure out the ground contact logic with the serverless version. Work with uncle to figure that one out before 9pm.
 - Going to work on telemetry
+- Telemetry needs to depend more strongly on calibration. Need to make the calibration module more robust since everything depends on it for accuracy. Need to be clear about horizontal vs vertical distance calibration. Also, all the measurements and telemetry information needs to recompute if calibration is redone.
 - Add another view mode that builds a 'body' onto the skeleton to look like Ralph Mann's figures.
 - 3D mode is a must. Alternatives to Three.js? Just to make sure there isn't a better tool before I go forward with it.
 - Add the feature to place markers (with optional labels) and then retroactively measure the distance between them
 - So many face options in poseconfig panel. Hide most?
 - When using the export option, let the draw box disappear after I close the panel.
+- When done, create desktop version (Electron.js?) so that I don't have to upload anything. Find a way to run the application on the desktop and run the Python server on the laptop as well. Will have to figure out how to manage both seamlessly (web sockets)?
 
 ## Backend
 
