@@ -19,7 +19,7 @@ What we discussed previously. Needs a start frame and a start line (drawn in a p
 
 Flying Start
 ---
-Set just the start and end of the flying zone and let the timer start when the CoM hits the start (have the redundancy to set the start frame as backup) and let the timer stop when the CoM hits the  end of the zone (again, have a redundancy). We then report the fly time and the instantaneous velocity for every frame from start to end. Thoughts?
+Set just the start and end of the flying zone and let the timer start when the CoM hits the start (have the redundancy to set the start frame as backup) and let the timer stop when the CoM hits the  end of the zone (again, have a redundancy). We then report the fly time for every 10m segment [default fly distance partition] and just compute the fly velocity [which is fly distance / fly time]. Where fly time is the difference between time when we crossed start and time when we crossed finish. Or wait, we could just count the number of frames between the two and use the time per frame (based on accurate frame rate) to compute, right? For the flying sprints, the focus is on the fly time and the  average velocity between the zones (the formula above). No need to compute displacement and elapsed time in the build up zone before the fly. We may not be able to because the only field in view will probably be just the fly zone a a little margin on either side.
 
 
 ===
