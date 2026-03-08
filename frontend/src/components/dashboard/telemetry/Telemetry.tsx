@@ -320,8 +320,10 @@ export const Telemetry = () => {
 
   // Empty / loading state
   if (status !== 'ready' || !metrics) {
-    const msg =
-      status === 'idle'
+    const isUncalibrated = status === 'ready' && !calibration;
+    const msg = isUncalibrated
+      ? 'Calibrate to unlock telemetry'
+      : status === 'idle'
         ? 'Enable pose analysis to compute metrics'
         : status === 'loading'
           ? 'Analysing video…'
@@ -333,9 +335,16 @@ export const Telemetry = () => {
         {status === 'loading' && (
           <div className="w-4 h-4 border border-zinc-600 border-t-sky-400 rounded-full animate-spin" />
         )}
-        <span className="text-[9px] uppercase tracking-widest text-zinc-500 font-mono">
+        <span
+          className={`text-[9px] uppercase tracking-widest font-mono ${isUncalibrated ? 'text-amber-500' : 'text-zinc-500'}`}
+        >
           {msg}
         </span>
+        {isUncalibrated && (
+          <span className="text-[8px] text-zinc-600 font-mono">
+            Use the calibration tool in the control panel
+          </span>
+        )}
       </div>
     );
   }
@@ -343,6 +352,14 @@ export const Telemetry = () => {
   const cal = calibration !== null;
   const unit = cal ? 'm' : 'px';
   const f = currentFrame;
+
+  const calLineDir = (() => {
+    if (!calibration) return null;
+    const a = calibration.lineAngleDeg;
+    if (a < 20) return 'Horizontal';
+    if (a > 70) return 'Vertical';
+    return `Diagonal (${a.toFixed(0)}°)`;
+  })();
 
   // Left = green, Right = amber — consistent throughout
   const LC = '#4ade80',
@@ -373,6 +390,30 @@ export const Telemetry = () => {
         {/* ── Summary ─────────────────────────────────────────────────── */}
         {tab === 'summary' && (
           <>
+            <SectionHead label="Calibration" color="#f97316" />
+            {cal ? (
+              <>
+                <Stat
+                  label="Reference distance"
+                  value={calibration!.realMeters.toFixed(2)}
+                  unit="m"
+                  dim={`Line direction: ${calLineDir}`}
+                />
+                <Stat
+                  label="Scale"
+                  value={calibration!.pixelsPerMeter.toFixed(4)}
+                  unit="norm-units/m"
+                  dim="Stride lengths and CoM distances in metres"
+                />
+              </>
+            ) : (
+              <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800/60">
+                <span className="text-[8px] uppercase tracking-widest text-amber-500">
+                  No calibration — distances shown in pixels
+                </span>
+              </div>
+            )}
+
             <SectionHead label="Temporal" color="#38bdf8" />
             <Stat
               label="Ground contact time (avg)"

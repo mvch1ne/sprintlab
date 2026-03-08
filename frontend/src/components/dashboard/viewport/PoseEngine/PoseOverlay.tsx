@@ -4,6 +4,8 @@ import type { Keypoint } from './usePoseLandmarker';
 import type { GroundContactEvent } from '../../useSprintMetrics';
 import { LANDMARKS, CONNECTIONS, REGION_COLORS } from './poseConfig';
 
+export type ViewMode = 'video' | 'skeleton' | 'body';
+
 interface Props {
   keypoints: Keypoint[];
   frameWidth: number;
@@ -12,6 +14,7 @@ interface Props {
   videoNatHeight: number;
   visibilityMap: Record<number, boolean>;
   showLabels: boolean;
+  viewMode?: ViewMode;
   // Imperative ref — assign to allow rAF loop to call draw() directly
   // without going through React state (eliminates pose lag at non-1x speeds)
   drawRef?: React.MutableRefObject<((kp: Keypoint[]) => void) | null>;
@@ -38,6 +41,7 @@ export const PoseOverlay = ({
   videoNatHeight,
   visibilityMap,
   showLabels,
+  viewMode = 'video',
   drawRef,
   groundContacts = [],
 }: Props) => {
@@ -52,6 +56,7 @@ export const PoseOverlay = ({
   const natHeightRef = useRef(videoNatHeight);
   const visibilityMapRef = useRef(visibilityMap);
   const showLabelsRef = useRef(showLabels);
+  const viewModeRef = useRef(viewMode);
   const groundContactsRef = useRef(groundContacts);
   useEffect(() => {
     frameWidthRef.current = frameWidth;
@@ -71,6 +76,9 @@ export const PoseOverlay = ({
   useEffect(() => {
     showLabelsRef.current = showLabels;
   }, [showLabels]);
+  useEffect(() => {
+    viewModeRef.current = viewMode;
+  }, [viewMode]);
   useEffect(() => {
     groundContactsRef.current = groundContacts;
   }, [groundContacts]);
@@ -109,32 +117,130 @@ export const PoseOverlay = ({
       return !!p && p.score >= SCORE_THRESHOLD;
     };
 
-    for (const [a, b] of CONNECTIONS) {
-      if (!isVisible(a) || !isVisible(b)) continue;
-      const pa = toCanvas(kp[a]);
-      const pb = toCanvas(kp[b]);
-      const rA = lmMap.get(a)?.region ?? 'upper';
-      const rB = lmMap.get(b)?.region ?? 'upper';
-      const color = REGION_COLORS[rA === rB ? rA : rB];
-      ctx.beginPath();
-      ctx.moveTo(pa.x, pa.y);
-      ctx.lineTo(pb.x, pb.y);
-      ctx.strokeStyle = color + 'cc';
-      ctx.lineWidth = LINE_WIDTH;
-      ctx.stroke();
-    }
+    if (viewModeRef.current === 'body') {
+      // ── Ralph Mann-style body mode: filled ellipses per segment ────────────
+      const get = (idx: number) =>
+        isVisible(idx) ? toCanvas(kp[idx]) : null;
 
-    for (const lmDef of LANDMARKS) {
-      if (!isVisible(lmDef.index)) continue;
-      const { x, y } = toCanvas(kp[lmDef.index]);
-      const color = REGION_COLORS[lmDef.region];
-      ctx.beginPath();
-      ctx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
+      // Filled ellipse along segment pa→pb with half-width hw.
+      const seg = (
+        pa: { x: number; y: number } | null,
+        pb: { x: number; y: number } | null,
+        hw: number,
+        fill: string,
+      ) => {
+        if (!pa || !pb) return;
+        const dx = pb.x - pa.x;
+        const dy = pb.y - pa.y;
+        const len = Math.hypot(dx, dy);
+        if (len < 2) return;
+        ctx.save();
+        ctx.translate((pa.x + pb.x) / 2, (pa.y + pb.y) / 2);
+        ctx.rotate(Math.atan2(dy, dx));
+        ctx.beginPath();
+        ctx.ellipse(0, 0, len / 2 + hw * 0.35, hw, 0, 0, Math.PI * 2);
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.restore();
+      };
+
+      const lSho = get(5),  rSho = get(6);
+      const lElb = get(7),  rElb = get(8);
+      const lWri = get(9),  rWri = get(10);
+      const lHip = get(11), rHip = get(12);
+      const lKne = get(13), rKne = get(14);
+      const lAnk = get(15), rAnk = get(16);
+      const lToe = get(17), rToe = get(20);
+      const lHeel = get(19), rHeel = get(22);
+      const nose  = get(0);
+
+      const shoMid = lSho && rSho
+        ? { x: (lSho.x + rSho.x) / 2, y: (lSho.y + rSho.y) / 2 }
+        : null;
+      const hipMid = lHip && rHip
+        ? { x: (lHip.x + rHip.x) / 2, y: (lHip.y + rHip.y) / 2 }
+        : null;
+
+      // Fully opaque colors — 3D model look. Blue body, teal left leg, cyan right leg.
+      const bC = '#3b82f6';   // body — electric blue
+      const lC = '#10b981';   // left leg — emerald green
+      const rC = '#06b6d4';   // right leg — cyan
+
+      // Right limbs first (visually "behind")
+      seg(rHip, rKne,   8, rC);
+      seg(rKne, rAnk,   6, rC);
+      seg(rHeel, rToe,  3, rC);
+      // Right arm (body color)
+      seg(rSho, rElb,   6, bC);
+      seg(rElb, rWri,   5, bC);
+
+      // Torso
+      seg(lSho, rSho,   5, bC);
+      seg(lHip, rHip,   5, bC);
+      seg(shoMid, hipMid, 11, bC);
+
+      // Left limbs (visually "in front")
+      seg(lHip, lKne,   8, lC);
+      seg(lKne, lAnk,   6, lC);
+      seg(lHeel, lToe,  3, lC);
+      // Left arm (body color)
+      seg(lSho, lElb,   6, bC);
+      seg(lElb, lWri,   5, bC);
+
+      // Hands
+      for (const [wri, col] of [[lWri, bC], [rWri, bC]] as const) {
+        if (!wri) continue;
+        ctx.beginPath();
+        ctx.arc(wri.x, wri.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = col;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+
+      // Head
+      if (nose) {
+        ctx.beginPath();
+        ctx.arc(nose.x, nose.y, 11, 0, Math.PI * 2);
+        ctx.fillStyle = bC;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+    } else {
+      // ── Standard skeleton mode ──────────────────────────────────────────────
+      for (const [a, b] of CONNECTIONS) {
+        if (!isVisible(a) || !isVisible(b)) continue;
+        const pa = toCanvas(kp[a]);
+        const pb = toCanvas(kp[b]);
+        const rA = lmMap.get(a)?.region ?? 'upper';
+        const rB = lmMap.get(b)?.region ?? 'upper';
+        const color = REGION_COLORS[rA === rB ? rA : rB];
+        ctx.beginPath();
+        ctx.moveTo(pa.x, pa.y);
+        ctx.lineTo(pb.x, pb.y);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = LINE_WIDTH;
+        ctx.stroke();
+      }
+
+      for (const lmDef of LANDMARKS) {
+        if (!isVisible(lmDef.index)) continue;
+        const { x, y } = toCanvas(kp[lmDef.index]);
+        const color = REGION_COLORS[lmDef.region];
+        ctx.beginPath();
+        ctx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
     }
 
     // ── Stride length annotations ─────────────────────────────────────────
@@ -144,10 +250,6 @@ export const PoseOverlay = ({
         x: lb.left + p.x * sx,
         y: lb.top + p.y * sy,
       });
-
-      // Group by foot
-      const left = contacts.filter((c) => c.foot === 'left');
-      const right = contacts.filter((c) => c.foot === 'right');
 
       const drawStridePair = (
         a: GroundContactEvent,
@@ -179,10 +281,7 @@ export const PoseOverlay = ({
         // Label
         if (b.strideLength !== null) {
           const mid = (pa.x + pb.x) / 2;
-          const label =
-            b.strideLength > 10
-              ? `${b.strideLength.toFixed(0)}px`
-              : `${b.strideLength.toFixed(2)}m`;
+          const label = `${b.strideLength.toFixed(2)}m`;
           ctx.font = '9px "DM Mono", monospace';
           ctx.fillStyle = labelColor;
           ctx.textAlign = 'center';
@@ -192,10 +291,85 @@ export const PoseOverlay = ({
         ctx.restore();
       };
 
-      for (let i = 1; i < left.length; i++)
-        drawStridePair(left[i - 1], left[i], '#4ade8099', '#4ade80');
-      for (let i = 1; i < right.length; i++)
-        drawStridePair(right[i - 1], right[i], '#fb923c99', '#fb923c');
+      // Draw step brackets between consecutive contacts of any foot
+      for (let i = 1; i < contacts.length; i++) {
+        const a = contacts[i - 1];
+        const b = contacts[i];
+        if (b.strideLength !== null) {
+          const col = b.foot === 'left' ? '#10b981' : '#06b6d4';
+          drawStridePair(a, b, col + '99', col);
+        }
+      }
+
+      // ── Ground contact nodes ─────────────────────────────────────────────
+      const mx = mousePosRef.current?.x ?? -9999;
+      const my = mousePosRef.current?.y ?? -9999;
+      const HOVER_R = 16;
+      let hoveredContact: GroundContactEvent | null = null;
+      for (const c of contacts) {
+        const cnx = lb.left + c.contactSite.x * sx;
+        const cny = lb.top + c.contactSite.y * sy;
+        if (Math.hypot(cnx - mx, cny - my) < HOVER_R) {
+          hoveredContact = c;
+          break;
+        }
+      }
+      for (const c of contacts) {
+        const cnx = lb.left + c.contactSite.x * sx;
+        const cny = lb.top + c.contactSite.y * sy;
+        const isHov = hoveredContact === c;
+        const ncol = c.foot === 'left' ? '#10b981' : '#06b6d4';
+        ctx.beginPath();
+        ctx.arc(cnx, cny, isHov ? 7 : 5, 0, Math.PI * 2);
+        ctx.fillStyle = isHov ? ncol : ncol + '99';
+        ctx.fill();
+        ctx.strokeStyle = isHov ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.55)';
+        ctx.lineWidth = isHov ? 2 : 1.5;
+        ctx.stroke();
+      }
+      // Tooltip
+      if (hoveredContact) {
+        const hc = hoveredContact;
+        const cnx = lb.left + hc.contactSite.x * sx;
+        const cny = lb.top + hc.contactSite.y * sy;
+        const tcol = hc.foot === 'left' ? '#10b981' : '#06b6d4';
+        const lines: string[] = [
+          `${hc.foot === 'left' ? 'Left' : 'Right'} foot`,
+          `Contact time: ${(hc.contactTime * 1000).toFixed(0)} ms`,
+          hc.flightTimeBefore > 0.01
+            ? `Flight before: ${(hc.flightTimeBefore * 1000).toFixed(0)} ms`
+            : 'Flight before: —',
+          hc.strideLength != null
+            ? `Step: ${hc.strideLength.toFixed(2)} m`
+            : 'Step: — (calibrate first)',
+          ...(hc.strideFrequency != null
+            ? [`Cadence: ${hc.strideFrequency.toFixed(2)} Hz`]
+            : []),
+          `Frame: ${hc.contactFrame}`,
+        ];
+        ctx.font = '10px "DM Mono", monospace';
+        const lineH = 15;
+        const pad = { x: 9, y: 6 };
+        const maxW = Math.max(...lines.map((l) => ctx.measureText(l).width));
+        const bw = maxW + pad.x * 2;
+        const bh = lines.length * lineH + pad.y * 2;
+        let tx = cnx + 14;
+        let ty = cny - bh / 2;
+        if (tx + bw > cw - 4) tx = cnx - bw - 14;
+        if (ty < 4) ty = 4;
+        if (ty + bh > ch - 4) ty = ch - bh - 4;
+        ctx.fillStyle = 'rgba(9,9,11,0.92)';
+        ctx.fillRect(tx, ty, bw, bh);
+        ctx.strokeStyle = tcol;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(tx, ty, bw, bh);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        lines.forEach((line, i) => {
+          ctx.fillStyle = i === 0 ? tcol : '#d4d4d8';
+          ctx.fillText(line, tx + pad.x, ty + pad.y + i * lineH);
+        });
+      }
     }
 
     if (showLabelsRef.current && mousePosRef.current) {
@@ -251,7 +425,7 @@ export const PoseOverlay = ({
   // Redraw when any display-affecting prop changes
   useEffect(() => {
     drawKp(currentKpRef.current);
-  }, [visibilityMap, showLabels, drawKp]);
+  }, [visibilityMap, showLabels, viewMode, drawKp]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

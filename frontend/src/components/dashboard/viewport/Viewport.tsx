@@ -9,6 +9,7 @@ import { MeasurementOverlay } from './CalibrationAndMeasurements/MeasurementOver
 import { MeasurementPanel } from './CalibrationAndMeasurements/MeasurementPanel';
 import type { Measurement } from './CalibrationAndMeasurements/MeasurementOverlay';
 import { PoseOverlay } from './PoseEngine/PoseOverlay';
+import type { ViewMode } from './PoseEngine/PoseOverlay';
 import { PosePanel } from './PoseEngine/PosePanel';
 import { usePoseLandmarker } from './PoseEngine/usePoseLandmarker';
 import type { Keypoint } from './PoseEngine/usePoseLandmarker';
@@ -73,7 +74,7 @@ export const Viewport = () => {
   const [poseEnabled, setPoseEnabled] = useState(false);
   const [showPosePanel, setShowPosePanel] = useState(false);
   const [showPoseLabels, setShowPoseLabels] = useState(true);
-  const [skeletonOnly, setSkeletonOnly] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('video');
   const [mode3D, setMode3D] = useState(false);
   const [landmarkVisibility, setLandmarkVisibility] = useState<
     Record<number, boolean>
@@ -123,6 +124,8 @@ export const Viewport = () => {
     poseStatus === 'ready' ? totalFrames : 0,
     fps,
     calibration,
+    poseFrameW,
+    poseFrameH,
   );
 
   // ── Publish to VideoContext so Telemetry can read without prop-drilling ────
@@ -146,6 +149,18 @@ export const Viewport = () => {
   useEffect(() => {
     ctxSetCal(calibration);
   }, [calibration, ctxSetCal]);
+
+  // When calibration changes, recompute metres for all existing distance measurements.
+  useEffect(() => {
+    if (!calibration) return;
+    setMeasurements((prev) =>
+      prev.map((m) => {
+        if (m.type !== 'distance' || m.normDist == null) return m;
+        const meters = m.normDist / calibration.pixelsPerMeter;
+        return { ...m, meters, label: `${meters.toFixed(2)}m` };
+      }),
+    );
+  }, [calibration]);
   useEffect(() => {
     ctxSetMetrics(metrics);
   }, [metrics, ctxSetMetrics]);
@@ -409,6 +424,7 @@ export const Viewport = () => {
         setShowMeasurementPanel(false);
         setPoseEnabled(false);
         setShowPosePanel(false);
+        setViewMode('video');
         resetPose();
         setLandmarkVisibility(buildDefaultVisibility());
         setShowTrimCropPanel(false);
@@ -501,31 +517,27 @@ export const Viewport = () => {
           {videoMeta && poseEnabled && poseStatus === 'ready' && (
             <>
               <div className="h-3 w-px bg-zinc-400 dark:bg-zinc-600" />
-              {/* View mode pill — Video / Skeleton */}
+              {/* View mode pill — Video / Skeleton / Body */}
               <div className="flex items-center border border-zinc-400 dark:border-zinc-600 rounded-sm overflow-hidden">
-                {(['video', 'skeleton'] as const).map((mode) => {
-                  const active =
-                    mode === 'skeleton' ? skeletonOnly : !skeletonOnly;
-                  return (
-                    <button
-                      key={mode}
-                      onClick={() => setSkeletonOnly(mode === 'skeleton')}
-                      className={`flex items-center gap-1 px-2 h-4 text-[10px] uppercase tracking-widest transition-colors cursor-pointer
-                        ${
-                          active
-                            ? 'bg-zinc-800 dark:bg-zinc-200 text-zinc-100 dark:text-zinc-900'
-                            : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
-                        }`}
-                    >
-                      {mode === 'video' ? (
-                        <Layers className="w-2.5 h-2.5" />
-                      ) : (
-                        <Box className="w-2.5 h-2.5" />
-                      )}
-                      <span>{mode}</span>
-                    </button>
-                  );
-                })}
+                {(['video', 'skeleton', 'body'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setViewMode(mode)}
+                    className={`flex items-center gap-1 px-2 h-4 text-[10px] uppercase tracking-widest transition-colors cursor-pointer border-r border-zinc-400 dark:border-zinc-600 last:border-r-0
+                      ${
+                        viewMode === mode
+                          ? 'bg-zinc-800 dark:bg-zinc-200 text-zinc-100 dark:text-zinc-900'
+                          : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
+                      }`}
+                  >
+                    {mode === 'video' ? (
+                      <Layers className="w-2.5 h-2.5" />
+                    ) : (
+                      <Box className="w-2.5 h-2.5" />
+                    )}
+                    <span>{mode}</span>
+                  </button>
+                ))}
               </div>
               {/* 3D mode indicator */}
               <button
@@ -583,7 +595,7 @@ export const Viewport = () => {
       >
         {videoMeta ? (
           <>
-            {skeletonOnly && <div className="absolute inset-0 bg-zinc-950" />}
+            {viewMode !== 'video' && <div className="absolute inset-0 bg-zinc-950" />}
             <div
               className="absolute inset-0"
               style={{
@@ -599,7 +611,7 @@ export const Viewport = () => {
                 currentFrame={currentFrame}
                 playbackRate={playbackRate}
                 isPlaying={isPlaying}
-                skeletonOnly={skeletonOnly}
+                skeletonOnly={viewMode !== 'video'}
                 onFrameChange={setCurrentFrame}
                 onEnded={() => {
                   setIsPlaying(false);
@@ -630,6 +642,7 @@ export const Viewport = () => {
                   videoNatHeight={videoMeta.height}
                   visibilityMap={landmarkVisibility}
                   showLabels={showPoseLabels}
+                  viewMode={viewMode}
                   drawRef={poseDrawRef}
                   groundContacts={metrics?.groundContacts}
                 />

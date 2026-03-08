@@ -6,6 +6,8 @@ export interface CalibrationData {
   lineEnd: { x: number; y: number };
   realMeters: number;
   aspectRatio: number; // videoWidth / videoHeight, stored so measurements can use same ratio
+  /** Angle of the calibration line from horizontal, 0° = horizontal, 90° = vertical. */
+  lineAngleDeg: number;
 }
 
 interface Props {
@@ -191,12 +193,16 @@ export const CalibrationOverlay = ({
     const normDist = Math.sqrt(dx * dx + dy * dy);
     const pixelsPerMeter = normDist / meters;
     const aspectRatio = aspect;
+    // 0° = horizontal line, 90° = vertical line
+    const lineAngleDeg =
+      (Math.atan2(Math.abs(dy), Math.abs(dx)) * 180) / Math.PI;
     onCalibrationComplete({
       pixelsPerMeter,
       lineStart: pointA,
       lineEnd: pointB,
       realMeters: meters,
       aspectRatio,
+      lineAngleDeg,
     });
   }, [
     pointA,
@@ -220,6 +226,18 @@ export const CalibrationOverlay = ({
       : step === 'pick_end'
         ? 'Click to set point B'
         : 'Enter real-world distance';
+
+  // Show the dominant direction of the drawn line so user knows what they calibrated
+  const lineDirectionLabel = (() => {
+    if (!pointA || !pointB) return null;
+    const aspect = videoWidth && videoHeight ? videoWidth / videoHeight : 1;
+    const adx = Math.abs((pointB.x - pointA.x) * aspect);
+    const ady = Math.abs(pointB.y - pointA.y);
+    const angleDeg = (Math.atan2(ady, adx) * 180) / Math.PI;
+    if (angleDeg < 20) return 'Horizontal line';
+    if (angleDeg > 70) return 'Vertical line';
+    return `Diagonal line (${angleDeg.toFixed(0)}° from horizontal)`;
+  })();
 
   return (
     <div
@@ -245,6 +263,14 @@ export const CalibrationOverlay = ({
               {stepLabel}
             </span>
           </div>
+
+          {step === 'enter_distance' && lineDirectionLabel && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-950/80 border border-zinc-700 rounded-sm backdrop-blur-sm">
+              <span className="text-[9px] uppercase tracking-widest text-amber-400">
+                {lineDirectionLabel}
+              </span>
+            </div>
+          )}
 
           {step === 'enter_distance' && (
             <div className="flex items-center gap-2 px-3 py-2 bg-zinc-950/90 border border-zinc-600 rounded-sm backdrop-blur-sm">

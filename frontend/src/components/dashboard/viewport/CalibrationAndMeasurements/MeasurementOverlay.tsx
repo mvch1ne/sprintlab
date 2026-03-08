@@ -7,6 +7,8 @@ export interface Measurement {
   pointA: { x: number; y: number };
   pointB: { x: number; y: number };
   pointC?: { x: number; y: number }; // angle vertex: A-B-C, angle at B
+  /** Aspect-ratio-corrected normalised distance — recompute meters from this when calibration changes. */
+  normDist?: number;
   meters?: number;
   degrees?: number;
   label: string;
@@ -323,12 +325,14 @@ export const MeasurementOverlay = ({
         if (points.length === 0) {
           setPoints([pt]);
         } else {
-          const meters = toMeters(points[0], pt);
+          const nd = normDist(points[0], pt);
+          const meters = nd / calibration.pixelsPerMeter;
           onMeasurementAdded({
             id: crypto.randomUUID(),
             type: 'distance',
             pointA: points[0],
             pointB: pt,
+            normDist: nd,
             meters,
             label: `${meters.toFixed(2)}m`,
             visible: true,

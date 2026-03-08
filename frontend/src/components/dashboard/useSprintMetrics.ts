@@ -26,8 +26,8 @@ export interface GroundContactEvent {
   contactSite: { x: number; y: number }; // heel pixel coords at touchdown
   comAtContact: { x: number; y: number }; // hip-midpoint at touchdown
   comDistance: number; // distance CoM→contact site (m or px)
-  strideLength: number | null; // to previous same-foot contact (m or px)
-  strideFrequency: number | null; // Hz — 1 / stride cycle time
+  strideLength: number | null; // step length: to previous contact of either foot (m)
+  strideFrequency: number | null; // Hz — 1 / step cycle time
 }
 
 export interface JointTimeSeries {
@@ -136,8 +136,16 @@ function buildSeries(raw: (number | null)[], fps: number): JointTimeSeries {
   return { frames: raw.map((_, i) => i), angle, velocity, accel };
 }
 
+type ScaleOps = {
+  /** Convert a horizontal inference-frame pixel distance → metres. */
+  h: (dx: number) => number;
+  /** Convert a 2-D inference-frame pixel displacement → metres. */
+  xy: (dx: number, dy: number) => number;
+} | null;
+
 /** Detect ground contact windows for one foot.
- *  Strategy: heel y > (maxHeelY − threshold) means "on ground".
+ *  Strategy: use whichever of toe/heel is closest to ground (largest Y in screen space).
+ *  This captures toe-first contacts common in sprinting where the heel stays elevated.
  *  Threshold = 12% of total vertical travel — works for any camera height/distance. */
 function detectContacts(
   heelPts: (P2 | null)[],
@@ -146,16 +154,24 @@ function detectContacts(
   foot: 'left' | 'right',
   comPts: (P2 | null)[],
   prev: GroundContactEvent[],
-  scale: ((px: number) => number) | null,
+  scaleOps: ScaleOps,
 ): GroundContactEvent[] {
-  const heelYs = heelPts.flatMap((p) => (p ? [p.y] : []));
-  if (!heelYs.length) return [];
-  const maxY = Math.max(...heelYs);
-  const minY = Math.min(...heelYs);
+  // Combined foot Y: whichever landmark is closer to ground (larger Y in screen coords)
+  const footYs: (number | null)[] = heelPts.map((h, i) => {
+    const t = toePts[i];
+    if (h && t) return Math.max(h.y, t.y);
+    if (h) return h.y;
+    if (t) return t.y;
+    return null;
+  });
+  const validYs = footYs.flatMap((y) => (y != null ? [y] : []));
+  if (!validYs.length) return [];
+  const maxY = Math.max(...validYs);
+  const minY = Math.min(...validYs);
   const thr = (maxY - minY) * 0.12;
   const floor = maxY - thr;
 
-  const onGnd = heelPts.map((p) => !!p && p.y >= floor);
+  const onGnd = footYs.map((y) => y != null && y >= floor);
 
   const events: GroundContactEvent[] = [];
   let start: number | null = null;
@@ -168,23 +184,25 @@ function detectContacts(
       const duration = (i - start) / fps;
       // Reasonable sprint contact: 50–600 ms
       if (duration >= 0.05 && duration <= 0.6) {
-        const site = heelPts[start] ?? toePts[start];
+        // Contact site: whichever of toe/heel is closest to the ground (larger Y)
+        const h = heelPts[start];
+        const t = toePts[start];
+        const site = h && t ? (h.y > t.y ? h : t) : (h ?? t);
         const com = comPts[start];
+        // Only report CoM distance when calibrated.
         const comDist =
-          site && com
-            ? scale
-              ? scale(Math.hypot(site.x - com.x, site.y - com.y))
-              : Math.hypot(site.x - com.x, site.y - com.y)
+          site && com && scaleOps
+            ? scaleOps.xy(site.x - com.x, site.y - com.y)
             : 0;
 
-        // Stride: distance to previous same-foot contact
-        const sameFoot = [...prev, ...events].filter((e) => e.foot === foot);
-        const prevEvt = sameFoot.at(-1) ?? null;
+        // Step: distance to the previous contact of EITHER foot (foot-to-next-foot)
+        const prevEvt = [...prev, ...events].at(-1) ?? null;
         let strideLength: number | null = null;
         let strideFrequency: number | null = null;
         if (prevEvt && site) {
           const dx = Math.abs(site.x - prevEvt.contactSite.x);
-          strideLength = scale ? scale(dx) : dx;
+          // Only report stride length when calibrated — pixel values are meaningless here.
+          strideLength = scaleOps ? scaleOps.h(dx) : null;
           const dt = (start - prevEvt.contactFrame) / fps;
           strideFrequency = dt > 0 ? 1 / dt : null;
         }
@@ -221,9 +239,15 @@ export function useSprintMetrics(
   totalFrames: number,
   fps: number,
   calibration: CalibrationData | null,
+  /** Inference-frame pixel dimensions — required for correct metre conversion. */
+  frameWidth: number,
+  frameHeight: number,
 ): SprintMetrics | null {
   return useMemo(() => {
     if (totalFrames < 2 || fps <= 0) return null;
+    // Require calibration — without it, all distance-based metrics are meaningless
+    // and angular-only data is not yet sufficient to unlock the panel.
+    if (!calibration) return null;
 
     // Build per-frame point series for every landmark we need
     const all = Array.from({ length: totalFrames }, (_, i) => getKeypoints(i));
@@ -254,13 +278,27 @@ export function useSprintMetrics(
       return { x: (l.x + r.x) / 2, y: (l.y + r.y) / 2 };
     });
 
-    const scale = calibration
-      ? (px: number) => px / calibration.pixelsPerMeter
-      : null;
+    // Build scale operations only when calibration AND inference-frame dims are known.
+    // Keypoints are in inference-frame pixel coords; calibration was computed in
+    // normalised (0-1) video space with aspect-ratio correction applied to the
+    // horizontal axis. We therefore normalise each component before applying ppm.
+    const scaleOps: ScaleOps =
+      calibration && frameWidth > 0 && frameHeight > 0
+        ? {
+            h: (dx: number) =>
+              ((Math.abs(dx) / frameWidth) * calibration.aspectRatio) /
+              calibration.pixelsPerMeter,
+            xy: (dx: number, dy: number) => {
+              const nx = (dx / frameWidth) * calibration.aspectRatio;
+              const ny = dy / frameHeight;
+              return Math.sqrt(nx * nx + ny * ny) / calibration.pixelsPerMeter;
+            },
+          }
+        : null;
 
     // ── Ground contacts ─────────────────────────────────────────────────────
-    const leftC = detectContacts(lHeel, lToe, fps, 'left', com, [], scale);
-    const rightC = detectContacts(rHeel, rToe, fps, 'right', com, leftC, scale);
+    const leftC = detectContacts(lHeel, lToe, fps, 'left', com, [], scaleOps);
+    const rightC = detectContacts(rHeel, rToe, fps, 'right', com, leftC, scaleOps);
     const contacts = [...leftC, ...rightC].sort(
       (a, b) => a.contactFrame - b.contactFrame,
     );
@@ -329,5 +367,5 @@ export function useSprintMetrics(
 
       com: com.map((p, i) => ({ frame: i, x: p?.x ?? 0, y: p?.y ?? 0 })),
     };
-  }, [getKeypoints, totalFrames, fps, calibration]);
+  }, [getKeypoints, totalFrames, fps, calibration, frameWidth, frameHeight]);
 }
