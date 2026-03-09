@@ -13,7 +13,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-const TELEMETRY_MIN = 180; // px
+const TELEMETRY_MIN = 260; // px
 const TELEMETRY_MAX = 480; // px
 const TELEMETRY_DEFAULT = 260; // px
 const COLLAPSED_WIDTH = 20; // px — slim strip

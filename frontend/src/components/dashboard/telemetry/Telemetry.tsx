@@ -959,6 +959,13 @@ export const Telemetry = () => {
                 dim={`${(metrics.avgStrideFreq * 60).toFixed(1)} strides / min`}
               />
             )}
+            {metrics.avgComDistance !== null && (
+              <Stat
+                label="CoM to ground contact (avg)"
+                value={metrics.avgComDistance.toFixed(cal ? 2 : 0)}
+                unit={unit}
+              />
+            )}
 
             <SectionHead label="Trunk" color="#fb923c" />
             <JointRow

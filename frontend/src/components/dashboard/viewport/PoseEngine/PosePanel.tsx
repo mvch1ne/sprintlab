@@ -10,10 +10,8 @@ import type { LandmarkDef } from './poseConfig';
 
 interface Props {
   visibilityMap: Record<number, boolean>;
-  showLabels: boolean;
   onToggleLandmark: (index: number) => void;
   onToggleRegion: (region: LandmarkDef['region']) => void;
-  onToggleLabels: () => void;
   onClose: () => void;
 }
 
@@ -26,10 +24,8 @@ const REGIONS: { key: LandmarkDef['region']; label: string }[] = [
 
 export const PosePanel = ({
   visibilityMap,
-  showLabels,
   onToggleLandmark,
   onToggleRegion,
-  onToggleLabels,
   onClose,
 }: Props) => {
   return (
@@ -45,19 +41,6 @@ export const PosePanel = ({
             Pose Landmarks
           </span>
           <div className="ml-auto flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={onToggleLabels}
-                  className={`transition-colors cursor-pointer ${showLabels ? 'text-sky-500' : 'text-zinc-500 hover:text-zinc-300'}`}
-                >
-                  {showLabels ? <Eye size={10} /> : <EyeOff size={10} />}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {showLabels ? 'Hide hover labels' : 'Show hover labels'}
-              </TooltipContent>
-            </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
                 <button

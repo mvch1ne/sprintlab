@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { FilePlayIcon, Clock, Upload, Layers, Box, Pencil } from 'lucide-react';
+import { FilePlayIcon, Clock, Upload, Layers, Box, Pencil, Eye, EyeOff } from 'lucide-react';
 import { IconDimensions } from '@tabler/icons-react';
 import { VideoLayer } from './VideoLayer';
 import { ControlPanel } from './ControlPanel';
@@ -79,8 +79,8 @@ export const Viewport = () => {
   // ── Pose ──────────────────────────────────────────────────────────────────
   const [poseEnabled, setPoseEnabled] = useState(false);
   const [showPosePanel, setShowPosePanel] = useState(false);
-  const [showPoseLabels, setShowPoseLabels] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('video');
+  const [skeletonHidden, setSkeletonHidden] = useState(false);
 
   const [manualContacts, setManualContacts] = useState<ManualContact[]>([]);
   const [deletedContactIds, setDeletedContactIds] = useState<Set<string>>(
@@ -265,6 +265,10 @@ export const Viewport = () => {
           c.strideFrequency !== null ? [c.strideFrequency] : [],
         );
         return sf.length ? _avg(sf) : null;
+      })(),
+      avgComDistance: (() => {
+        const cd = gc.filter((c) => c.comDistance > 0).map((c) => c.comDistance);
+        return cd.length ? _avg(cd) : null;
       })(),
     };
   }, [metrics, manualContacts.length, deletedContactIds.size, mergedContacts]);
@@ -813,6 +817,23 @@ export const Viewport = () => {
               ))}
             </div>
 
+            {/* Hide skeleton toggle — only relevant in video mode */}
+            {viewMode === 'video' && (
+              <>
+                <div className="h-3 w-px bg-zinc-300 dark:bg-zinc-700" />
+                <button
+                  onClick={() => setSkeletonHidden((v) => !v)}
+                  className={`flex items-center gap-1 h-4.5 px-1.5 text-[9px] uppercase tracking-widest border rounded-sm transition-colors cursor-pointer
+                    ${skeletonHidden
+                      ? 'bg-zinc-800 dark:bg-zinc-200 border-zinc-600 text-zinc-100 dark:text-zinc-900'
+                      : 'border-zinc-300 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'}`}
+                >
+                  {skeletonHidden ? <EyeOff className="w-2 h-2" /> : <Eye className="w-2 h-2" />}
+                  <span>Skeleton</span>
+                </button>
+              </>
+            )}
+
             <div className="h-3 w-px bg-zinc-300 dark:bg-zinc-700" />
 
             {/* Annotate */}
@@ -922,8 +943,10 @@ export const Viewport = () => {
                   frameHeight={poseFrameH}
                   videoNatWidth={videoMeta.width}
                   videoNatHeight={videoMeta.height}
-                  visibilityMap={landmarkVisibility}
-                  showLabels={showPoseLabels}
+                  visibilityMap={skeletonHidden && viewMode === 'video'
+                    ? Object.fromEntries(LANDMARKS.map((l) => [l.index, false]))
+                    : landmarkVisibility}
+                  showLabels={true}
                   viewMode={viewMode}
                   drawRef={poseDrawRef}
                   groundContacts={mergedContacts}
@@ -1247,10 +1270,8 @@ export const Viewport = () => {
               >
                 <PosePanel
                   visibilityMap={landmarkVisibility}
-                  showLabels={showPoseLabels}
                   onToggleLandmark={handleToggleLandmark}
                   onToggleRegion={handleToggleRegion}
-                  onToggleLabels={() => setShowPoseLabels((v) => !v)}
                   onClose={() => setShowPosePanel(false)}
                 />
               </div>

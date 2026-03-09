@@ -57,6 +57,7 @@ export interface SprintMetrics {
   avgFlightTime: number; // s
   avgStrideLength: number | null; // m or px
   avgStrideFreq: number | null; // Hz
+  avgComDistance: number | null; // m or px
   // ── Angular — per joint, every frame ────────────────────────────────────────
   leftHip: JointTimeSeries;
   rightHip: JointTimeSeries;
@@ -377,6 +378,10 @@ export function useSprintMetrics(
       avgFlightTime: avg(flightTimes),
       avgStrideLength: strideLengths.length ? avg(strideLengths) : null,
       avgStrideFreq: strideFreqs.length ? avg(strideFreqs) : null,
+      avgComDistance: (() => {
+        const ds = contacts.filter((e) => e.comDistance > 0).map((e) => e.comDistance);
+        return ds.length ? avg(ds) : null;
+      })(),
 
       // Lower body — anatomical angles
       leftHip: buildSeries(jA(lKne, lHip, lSho), fps),
