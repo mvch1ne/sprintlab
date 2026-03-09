@@ -5,6 +5,7 @@ TODO
 ## Next Steps
 
 - Redesign the body character's appearance to look cooler.
+- Review all files for (typescript and other) errors
 
 ===
 
