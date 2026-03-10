@@ -1,6 +1,6 @@
 # Math Reference
 
-All biomechanics computation in SprintLab is implemented in [`sprintMath.ts`](https://github.com/mvch1ne/zero/blob/main/frontend/src/components/dashboard/sprintMath.ts) — a pure TypeScript module with no React dependencies.
+All biomechanics computation in SprintLab is implemented in [`sprintMath.ts`](https://github.com/mvch1ne/sprintlab/blob/main/frontend/src/components/dashboard/sprintMath.ts) — a pure TypeScript module with no React dependencies.
 
 ## Notation
 

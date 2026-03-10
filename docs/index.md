@@ -14,7 +14,7 @@ hero:
       link: /math
     - theme: alt
       text: GitHub
-      link: https://github.com/mvch1ne/zero
+      link: https://github.com/mvch1ne/sprintlab
 
 features:
   - title: 133-Keypoint Pose Estimation

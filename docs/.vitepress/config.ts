@@ -4,7 +4,7 @@ import mathjax3 from 'markdown-it-mathjax3';
 export default defineConfig({
   title: 'SprintLab Docs',
   description: 'Technical documentation for SprintLab — sprint kinematic analysis from video.',
-  base: '/zero/',
+  base: '/sprintlab/',
 
   markdown: {
     config: (md) => {
@@ -17,7 +17,7 @@ export default defineConfig({
       { text: 'Home', link: '/' },
       { text: 'Architecture', link: '/architecture' },
       { text: 'Math Reference', link: '/math' },
-      { text: 'GitHub', link: 'https://github.com/mvch1ne/zero' },
+      { text: 'GitHub', link: 'https://github.com/mvch1ne/sprintlab' },
     ],
 
     sidebar: [
@@ -55,7 +55,7 @@ export default defineConfig({
       },
     ],
 
-    socialLinks: [{ icon: 'github', link: 'https://github.com/mvch1ne/zero' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/mvch1ne/sprintlab' }],
 
     footer: {
       message: 'Released under the MIT License.',
