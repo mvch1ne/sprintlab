@@ -1,0 +1,14 @@
+{
+  "name": "sprintlab-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.3",
+    "markdown-it-mathjax3": "^4.3.2"
+  }
+}
