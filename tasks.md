@@ -4,9 +4,10 @@ TODO
 
 ## Next Steps
 
-Continue with: Any updates to make to docs about these view modes? Do
-
+- Continue with: Any updates to make to docs about these view modes? Do
 - Add a help section where we'll write some guides to help users. Will record a demo video and post on YouTube and link here. Will provide a download sample so users can test the platform without having their own sprint video. Can use modals to guide the user on what to do. Allow the user to turn off the modal for subsequent visits and store that in local storage but have the option to turn it back on so that it shows up every time they open the application.
+- Host the frontend and backend.
+- Add link to frontend Github repository and docs page.
 
 ===
 
