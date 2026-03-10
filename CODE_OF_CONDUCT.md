@@ -2,7 +2,7 @@
 
 ## Our Pledge
 
-SprintLab exists to give every athlete access to the kind of biomechanics analysis that was previously only available in well-funded labs. That mission only works if everyone who contributes, reports issues, or asks questions feels welcome and respected — regardless of age, body type, athletic background, disability, ethnicity, gender identity, experience level, nationality, personal appearance, religion, or sexual identity.
+SprintLab exists to give every athlete access to the kind of biomechanics analysis that was previously only available in well-funded labs. That mission only works if everyone who contributes, reports issues, or asks questions feels welcome and respected — regardless of age, body type, athletic background, disability, ethnicity, experience level, nationality, personal appearance, religion.
 
 We pledge to make participation in this project a harassment-free experience for everyone.
 
