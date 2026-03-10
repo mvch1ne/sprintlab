@@ -15,5 +15,3 @@ Continue wit: Any updates to make to docs about these view modes? Do
 ## Backend
 
 - Deploy to Fly.io because free tier is more generous and doesn't hibernate? Regardless can write code to warm up the server
-
-## Documentation
