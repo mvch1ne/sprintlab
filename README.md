@@ -6,6 +6,8 @@ This project is very personal to me. As an athlete and engineer from Ghana, West
 
 **[Full documentation →](https://mvch1ne.github.io/sprintlab/)**
 
+<span style="color:red"><strong>DEPLOYED WEBSITE COMING SOON!!!</strong></span>
+
 ---
 
 ## Table of Contents
