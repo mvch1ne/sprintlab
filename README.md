@@ -4,7 +4,7 @@ The app lets users upload videos, calibrate real-world distances and compute per
 
 This project is very personal to me. As an athlete and engineer from Ghana, West Africa, where biomechanics labs are pretty much non-existent, I looked around for a tool to help level the playing field and realized I had to build it myself. SprintLab is open to everyone worldwide, but my major motivation is to help bridge the resource gap in underdeveloped parts of the world, like Africa. I'm excited to see how it helps athletes everywhere.
 
-**[Full documentation →](https://mvch1ne.github.io/sprintlab/)**
+**[Documentation Website →](https://mvch1ne.github.io/sprintlab/)**
 
 ### DEPLOYED WEBSITE COMING SOON
 
