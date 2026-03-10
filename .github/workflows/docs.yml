@@ -35,6 +35,10 @@ jobs:
         working-directory: docs
         run: npm install
 
+      - name: Fix binary permissions
+        working-directory: docs
+        run: chmod +x node_modules/.bin/vitepress
+
       - name: Build docs
         working-directory: docs
         run: npm run build
