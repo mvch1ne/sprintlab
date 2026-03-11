@@ -80,16 +80,77 @@ Connections are defined as `[from, to]` index pairs. The `PoseOverlay` component
 
 ## `PoseOverlay`
 
-Renders on a canvas element sized to the video. On each frame change:
+Renders on a canvas element sized to the video. On each frame change it clears the canvas and draws the pose according to the active `ViewMode`.
 
-1. Clears the canvas
-2. Gets keypoints for the current frame via `getPoseKeypoints(frameIdx)`
-3. For each connection `[a, b]`: if both keypoints have `score ≥ 0.35`, draws a line
-4. For each keypoint with `score ≥ 0.35`, draws a small circle
+### Coordinate mapping
 
-Point coordinates from the backend are in inference-frame pixels. They are scaled to canvas pixels by:
+Backend keypoints are in inference-frame pixels. They are mapped to canvas pixels through a letterbox transform that preserves the video's aspect ratio:
 
 ```typescript
-const cx = (kp.x / frameWidth) * canvas.width;
-const cy = (kp.y / frameHeight) * canvas.height;
+const lb = letterboxRect(canvasW, canvasH, natW, natH);
+const cx = lb.left + kp.x * (lb.width / frameWidth);
+const cy = lb.top  + kp.y * (lb.height / frameHeight);
 ```
+
+### Rendering modes
+
+#### `skeleton` (default line mode)
+Iterates `CONNECTIONS` pairs. If both endpoints have `score ≥ SCORE_THRESHOLD (0.43)`, draws a coloured line. Dot radius is 4 px.
+
+#### `body`
+Draws filled ellipses per anatomical segment using `ctx.ellipse`. Each ellipse is centred on the segment midpoint, rotated to the segment angle, with half-length `segLen/2 + hw×0.35` and half-width `hw`. Stroke: `rgba(0,0,0,0.75)`, 1.5 px.
+
+| Region | Colour |
+|---|---|
+| Body / arms | `#3b82f6` (blue) |
+| Left leg | `#10b981` (green) |
+| Right leg | `#06b6d4` (cyan) |
+
+Depth order: right limbs → torso → left limbs (left is visually in front).
+
+#### `neon`
+Same segment geometry as `body`. Each segment is drawn twice:
+1. **Outer pass** — `ctx.shadowBlur = 22`, fills the ellipse at 73% opacity
+2. **Inner pass** — `ctx.shadowBlur = 8`, fills a smaller concentric ellipse (60% × 40% of outer) at `#ffffffaa` for a bright core
+
+| Region | Colour |
+|---|---|
+| Body / arms | `#00e5ff` (electric cyan) |
+| Left leg | `#b2ff00` (electric lime) |
+| Right leg | `#ff00e5` (magenta) |
+
+#### `grad` (gradient cylinders)
+After translating to the segment midpoint and rotating to align the segment along the x-axis, a `createLinearGradient(0, -hw, 0, hw)` is created in local space. This makes the gradient **perpendicular to the segment**, producing a cylindrical sheen:
+
+```
+stop 0.00 → base color at 33% opacity  (dark edge)
+stop 0.30 → full base color
+stop 0.48 → highlight color            (bright centre)
+stop 0.52 → highlight color
+stop 0.70 → full base color
+stop 1.00 → base color at 33% opacity  (dark edge)
+```
+
+| Region | Base | Highlight |
+|---|---|---|
+| Body / arms | `#3b82f6` | `#93c5fd` |
+| Left leg | `#10b981` | `#6ee7b7` |
+| Right leg | `#06b6d4` | `#67e8f9` |
+
+#### `analytics`
+Uses the `CONNECTIONS` array (same as `skeleton`) but drawn over the video with thicker strokes (2.5 px) and left/right colour coding. No dark background — `skeletonOnly` stays `false` on `VideoLayer`.
+
+| Side | Line & dot colour |
+|---|---|
+| Left | `#3b82f6` (blue) |
+| Right | `#ef4444` (red) |
+| Centre / torso | `rgba(255,255,255,0.85)` (white) |
+
+#### `bio` (biomechanics)
+Same as `body` but all half-widths scaled by **1.15×**, stroke width 2.5 px at `rgba(0,0,0,0.85)` for bold black outlines.
+
+| Region | Colour |
+|---|---|
+| Body / arms | `#f1f5f9` (near-white) |
+| Left leg | `#f59e0b` (amber) |
+| Right leg | `#38bdf8` (sky blue) |
