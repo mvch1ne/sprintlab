@@ -653,27 +653,17 @@ function CoMTab({
     // sign: +1 for rightward, -1 for leftward — so relDisp is always ≥ 0 past start.
     const dir = movingPositive ? 1 : -1;
 
-    const gateSpeed = (() => {
-      const result = new Array(n).fill(0) as number[];
-      for (let fi = startIdx + 1; fi < n; fi++) {
-        const d = ((comSeries.x[fi] ?? 0) - xAtCrossing) * dir;
-        if (d < 0) continue; // no metric before start line
-        const elapsed = (fi - startIdx) / fps + RT;
-        result[fi] = elapsed > 0 ? d / elapsed : 0;
-      }
-      return result;
-    })();
-
-    const gateAccel = (() => {
-      const result = new Array(n).fill(0) as number[];
-      for (let fi = 1; fi < n - 1; fi++)
-        result[fi] = ((gateSpeed[fi + 1] - gateSpeed[fi - 1]) * fps) / 2;
-      if (n > 1) {
-        result[0] = (gateSpeed[1] - gateSpeed[0]) * fps;
-        result[n - 1] = (gateSpeed[n - 1] - gateSpeed[n - 2]) * fps;
-      }
-      return result;
-    })();
+    // Static mode: use instantaneous velocity — frame-by-frame |dCoM/dt| — not d/elapsed.
+    // This leverages the per-frame pose data to give true instantaneous speed at every frame,
+    // rather than an average that depends on total elapsed time (and hence reaction time).
+    const gateSpeed = new Array(n).fill(0) as number[];
+    const gateAccel = new Array(n).fill(0) as number[];
+    for (let fi = startIdx + 1; fi < n; fi++) {
+      const d = ((comSeries.x[fi] ?? 0) - xAtCrossing) * dir;
+      if (d < 0) continue; // mask frames before start line
+      gateSpeed[fi] = comSeries.speed[fi] ?? 0;
+      gateAccel[fi] = comSeries.accel[fi] ?? 0;
+    }
 
     const relDisp = (fi: number) =>
       ((comSeries.x[Math.min(fi, n - 1)] ?? 0) - xAtCrossing) * dir;
@@ -746,7 +736,7 @@ function CoMTab({
           gateSpeed,
           gateAccel,
           relDisp,
-          `Disp / (elapsed${reactionTimeEnabled ? ` + ${Math.round(reactionTime * 1000)}ms RT` : ''})`,
+          'Instantaneous |dCoM/dt|',
         )}
       </div>
     );
@@ -903,6 +893,42 @@ function CoMTab({
             </div>
           ))}
         </div>
+
+        {/* Instantaneous velocity sparkline within the fly zone */}
+        {(() => {
+          const zf0 = Math.max(0, Math.floor(entryFrac));
+          const zf1 = Math.min(n - 1, Math.ceil(exitFrac));
+          const zoneSpeed = comSeries.speed.slice(zf0, zf1 + 1);
+          if (zoneSpeed.length < 2) return null;
+          const inZone = f >= zf0 && f <= zf1;
+          const instSpeed = inZone ? (comSeries.speed[f] ?? 0) : null;
+          const headPct =
+            inZone && zoneSpeed.length > 1
+              ? ((f - zf0) / (zoneSpeed.length - 1)) * 100
+              : undefined;
+          return (
+            <>
+              <SectionHead label="Instantaneous velocity in zone (m/s)" color="#f97316" />
+              <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800/60">
+                <div className="flex justify-between mb-1">
+                  <span className="text-xs font-mono text-zinc-500">|dCoM/dt|</span>
+                  <span
+                    className="text-xs font-mono tabular-nums"
+                    style={{ color: '#f97316' }}
+                  >
+                    {instSpeed !== null ? `${instSpeed.toFixed(2)} m/s` : '—'}
+                  </span>
+                </div>
+                <Sparkline
+                  data={zoneSpeed}
+                  color="#f97316"
+                  height={30}
+                  playheadPct={headPct}
+                />
+              </div>
+            </>
+          );
+        })()}
 
         <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800/60 flex flex-col gap-1.5">
           {/* Entry frame — editable */}

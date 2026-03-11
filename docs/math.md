@@ -199,3 +199,31 @@ Cumulative horizontal distance travelled:
 $$D_i = \sum_{k=1}^{i} \frac{v_k}{f_s}$$
 
 This is a discrete Riemann sum approximating $\int_0^{t_i} v(t)\,\mathrm{d}t$.
+
+---
+
+## Velocity Calculation Modes
+
+SprintLab uses two distinct velocity strategies depending on the selected sprint mode, each chosen to give the most physically meaningful result for that context.
+
+### Static Start Mode — Instantaneous Velocity
+
+In static start mode, the athlete accelerates from rest. The velocity displayed at each frame is the **instantaneous** horizontal speed of the CoM — the same per-frame derivative computed in the CoM trajectory pipeline:
+
+$$v_i = \left|\dot{X}_i\right| = \left|\frac{X_{i+1} - X_{i-1}}{2} \cdot f_s\right|$$
+
+This directly exploits the frame-by-frame pose data to capture the true instantaneous acceleration profile from first movement through maximum speed. Dividing total displacement by total elapsed time (an average) would obscure this profile. Frames where the CoM has not yet reached the start line are masked to zero.
+
+> **Why not use average velocity here?** During acceleration, the athlete's speed changes continuously. An average (total distance ÷ total time) is dominated by the slow early frames and does not reflect the speed the athlete has actually reached at any given moment. Instantaneous velocity shows the true speed at each frame.
+
+### Flying Sprint Mode — Zone Velocity + Instantaneous Sparkline
+
+In flying sprint mode, the athlete is at near-maximum speed throughout the measurement zone. The **primary metric** is the average zone velocity — the standard approach used in fly-zone testing:
+
+$$v_{\text{zone}} = \frac{d_{\text{zone}}}{\Delta t_{\text{zone}}} = \frac{\left|X_{\text{exit}} - X_{\text{entry}}\right|}{(f_{\text{exit}} - f_{\text{entry}}) / f_s}$$
+
+Because the athlete has stopped accelerating appreciably, the average across the zone is a reliable proxy for peak speed and matches the measurement convention used in electronic timing gates.
+
+**Additionally**, an **instantaneous velocity sparkline** is rendered for the frames within the fly zone, using the same per-frame derivative $v_i$. This reveals within-zone velocity variation (e.g., slight deceleration near zone exit) and provides qualitative confirmation that the athlete was truly at constant speed — validating the average-zone-velocity reading.
+
+> **Summary:** Flying mode uses zone average as its scalar velocity metric (standard, comparable across athletes and setups) but adds instantaneous sparkline to expose any within-zone speed variation.
