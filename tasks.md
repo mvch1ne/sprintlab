@@ -2,7 +2,13 @@
 
 ## Next Steps
 
-- Create a separate branch for hosting and host the frontend and backend. Make sure all the settings and modifications are made so they can talk to each other. That would be cool. I'm thinking Firebase for the frontend and Fly or Render for the backend but open to suggestions. I want to use free tiers and have the frontend and backend running as seamlessly as possible without any interruptions.
+Context: SprintLab is a biomechanics sprint analysis platform. The frontend is a Vite/React SPA being hosted on Firebase Hosting. The backend is a FastAPI/Python server (backend/server.py) that runs RTMLib pose estimation with ONNX Runtime, uses StreamingResponse, and requires ≥2GB RAM. It currently runs locally at localhost:8000. The frontend reads VITE_POSE_BACKEND_URL from env to find it (frontend/src/components/dashboard/viewport/PoseEngine/usePoseLandmarker.ts).
+
+Previous recommendation: Host the backend on Google Cloud Run (same GCP project as Firebase), bake the ONNX model weights into the Docker image to avoid cold-start delays, and use Firebase Hosting rewrites to proxy /api/\*\* → Cloud Run so the frontend never needs a hardcoded backend URL.
+
+Task: Review this plan, confirm it's still the right approach (vs. Fly.io or other options), then implement it: write the Dockerfile, configure the Cloud Run service, update firebase.json with the rewrite, and set base: '/' in vite.config.ts. Then proceed to deploy the frontend to Firebase Hosting.
+
+---
 
 - Add link for frontend to Github repository.
 
