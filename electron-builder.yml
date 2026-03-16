@@ -1,0 +1,44 @@
+appId: com.sprintlab.app
+productName: SprintLab
+
+directories:
+  buildResources: build
+  output: dist-electron
+
+# Files included in the packaged app (relative to project root)
+files:
+  - electron/**/*
+  - frontend/dist/**/*
+
+# Python backend binary bundled as an extra resource
+extraResources:
+  - from: backend/dist/SprintLabBackend
+    to: backend
+    filter:
+      - "**/*"
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: build/icons/win/icon.ico
+
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  icon: build/icons/mac/icon.icns
+
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+  icon: build/icon.png
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+
+# Electron auto-updater (optional — configure later)
+# publish:
+#   provider: github

@@ -1,0 +1,20 @@
+{
+  "name": "sprintlab",
+  "version": "1.0.0",
+  "description": "Sprint biomechanics analysis — desktop app",
+  "main": "electron/main.js",
+  "scripts": {
+    "electron:dev": "concurrently \"npm run dev --prefix frontend\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:build": "npm run build --prefix frontend && electron-builder",
+    "electron:pack": "electron-builder --dir",
+    "electron:icons": "node scripts/generate-icons.js && electron-icon-builder --input=build/icon.png --output=build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "electron": "^36.0.0",
+    "electron-builder": "^26.0.0",
+    "electron-icon-builder": "^2.0.1",
+    "sharp": "^0.33.5",
+    "wait-on": "^8.0.0"
+  }
+}

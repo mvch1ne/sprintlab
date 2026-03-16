@@ -1,4 +1,21 @@
 output
 test_videos
 
+# Node
+node_modules/
+docs/node_modules/
+package-lock.json
 
+# Electron build outputs
+dist-electron/
+build/
+
+# Backend build artifacts
+backend/dist/
+backend/build_tmp/
+
+# VitePress built output (deployed by CI, not committed)
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+
+.claude

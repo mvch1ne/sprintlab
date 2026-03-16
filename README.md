@@ -17,14 +17,30 @@ This project is very personal to me. As an athlete and engineer from Ghana, West
 
 ## Table of Contents
 
+- [Download](#download)
 - [Features](#features)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
+- [Building from Source](#building-from-source)
 - [How It Works](#how-it-works)
 - [Metrics Reference](#metrics-reference)
 - [Testing](#testing)
+
+---
+
+## Download
+
+Pre-built installers for Windows, macOS, and Linux are available on the [**Releases page**](https://github.com/mvch1ne/sprintlab/releases).
+
+| Platform | File |
+| -------- | ---- |
+| Windows  | `SprintLab Setup x.x.x.exe` (NSIS installer) |
+| macOS    | `SprintLab-x.x.x.dmg` |
+| Linux    | `SprintLab-x.x.x.AppImage` |
+
+> **Note:** On first launch, SprintLab downloads the ONNX pose-estimation model weights (~70 MB) and caches them locally. An internet connection is required for this one-time download.
 
 ---
 
@@ -110,6 +126,10 @@ Video trimming, cropping, and export are handled entirely in the browser using F
 
 ```
 sprintlab/
+├── electron/
+│   ├── main.js                              # Electron main process (window, backend spawn, menu)
+│   └── preload.js                           # Context bridge (contextIsolation)
+│
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
@@ -139,11 +159,19 @@ sprintlab/
 ├── backend/
 │   ├── server.py                            # FastAPI app — /health + /infer/video
 │   ├── requirements.txt
+│   ├── SprintLabBackend.spec                # PyInstaller build spec
+│   ├── build_backend.sh / .bat             # Backend build scripts
 │   ├── pytest.ini
 │   └── tests/
 │       ├── conftest.py                      # cv2 + rtmlib stubs (no GPU needed)
 │       └── test_server.py                   # Endpoint tests
 │
+├── scripts/
+│   └── generate-icons.js                    # Renders SVG logo → 1024×1024 PNG
+│
+├── build/                                   # Generated icon assets (git-ignored)
+├── electron-builder.yml                     # Cross-platform packaging config
+├── package.json                             # Root — Electron entry point
 ├── tasks.md
 └── README.md
 ```
@@ -152,27 +180,97 @@ sprintlab/
 
 ## Getting Started
 
-### Backend
+### Desktop App — Development Mode
+
+Run the app with Electron pointing at the Vite dev server (hot reload enabled):
 
 ```bash
+# Terminal 1 — start the Python backend
 cd backend
 pip install -r requirements.txt
-uvicorn server:app --reload
+uvicorn server:app --port 8000 --reload
+
+# Terminal 2 — start Electron + Vite together
+npm install        # root (first time only)
+npm run electron:dev
 ```
 
-The first startup downloads ONNX model weights for Wholebody3d. Subsequent starts are fast. The server runs at `http://localhost:8000`.
+### Web / Browser Mode
 
-### Frontend
+Run without Electron — useful for frontend-only work:
 
 ```bash
-cd frontend
-npm install
-npm run dev
+# Terminal 1
+cd backend && uvicorn server:app --reload
+
+# Terminal 2
+cd frontend && npm install && npm run dev
 ```
 
-The app runs at `http://localhost:5173`. Open it, upload a video, and wait for the backend to finish inference before calibrating and exploring metrics.
+Open `http://localhost:5173` in a desktop browser.
 
-> The frontend polls `GET /health` on load. If the backend is still initialising (e.g., downloading models), the status bar will show a waiting state until it responds.
+> On first start the backend downloads ONNX model weights for Wholebody3d (~70 MB). Subsequent starts are fast. The server runs at `http://localhost:8000`.
+
+---
+
+## Building from Source
+
+Produces a self-contained installer with the Python backend bundled — no Python install needed on end-user machines.
+
+### Prerequisites
+
+| Requirement | Version |
+| ----------- | ------- |
+| Node.js     | ≥ 20    |
+| Python      | ≥ 3.10  |
+| pip         | latest  |
+
+### Step 1 — Build the Python backend
+
+PyInstaller compiles the FastAPI server and all ML dependencies into a standalone binary.
+
+```bash
+# Windows
+cd backend
+build_backend.bat
+
+# macOS / Linux
+cd backend
+chmod +x build_backend.sh && ./build_backend.sh
+```
+
+Output: `backend/dist/SprintLabBackend/SprintLabBackend[.exe]`
+
+> **onnxruntime on Windows:** if PyInstaller misses any DLLs, add them to the `binaries` list in `backend/SprintLabBackend.spec` and rebuild.
+
+### Step 2 — Generate app icons (first time only)
+
+```bash
+npm install       # root, if not already done
+npm run electron:icons
+```
+
+This renders the SprintLab SVG logo to `build/icon.png` (1024×1024) and generates `.ico` / `.icns` for Windows and macOS.
+
+### Step 3 — Package
+
+```bash
+npm run electron:build
+```
+
+| Platform | Output file |
+| -------- | ----------- |
+| Windows  | `dist-electron/SprintLab Setup x.x.x.exe` |
+| macOS    | `dist-electron/SprintLab-x.x.x.dmg` _(must build on macOS)_ |
+| Linux    | `dist-electron/SprintLab-x.x.x.AppImage` |
+
+> **Cross-compilation:** macOS `.dmg` can only be produced on a macOS machine. Windows and Linux builds can be produced on any platform with the right toolchain.
+
+### Quick test (no installer)
+
+```bash
+npm run electron:pack   # fast unpackaged build in dist-electron/
+```
 
 ---
 
