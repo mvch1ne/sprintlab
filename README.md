@@ -1,5 +1,5 @@
 ![Logo](https://github.com/mvch1ne/sprintlab/blob/main/frontend/public/logo.png)
-![Logo](https://github.com/mvch1ne/sprintlab/blob/main/frontend/public/thumbnail.png)
+![Demo](https://github.com/mvch1ne/sprintlab/blob/main/frontend/public/demo.gif)
 
 SprintLab is a desktop application I made to help sprinters perform kinematic analysis on their training videos so they can gain insights and improve their performance. It's built with Electron and a React/TypeScript frontend, and coupled with a Python backend built with FastAPI and RTMLib for highly accurate, research-level pose estimation and tracking of body landmarks. The desktop app bundles everything into a single installer — no Python, no server setup, just download and run.
 
@@ -8,8 +8,6 @@ The app lets users upload videos, calibrate real-world distances and compute per
 This project is very personal to me. As an athlete and engineer from Ghana, West Africa, where biomechanics labs are pretty much non-existent, I looked around for a tool to help level the playing field and realized I had to build it myself. SprintLab is open to everyone worldwide, but my major motivation is to help bridge the resource gap in underdeveloped parts of the world, like Africa. I'm excited to see how it helps athletes everywhere.
 
 ### [FULL DOCUMENTATION WEBSITE→](https://mvch1ne.github.io/sprintlab/)
-
-### DEPLOYED DEMO WEBSITE COMING SOON
 
 ### [DEMO VIDEO →](https://youtu.be/4RrcAlu0W9Q)
 
@@ -34,11 +32,11 @@ This project is very personal to me. As an athlete and engineer from Ghana, West
 
 A pre-built Windows installer is available on the [**Releases page**](https://github.com/mvch1ne/sprintlab/releases).
 
-| Platform | File                                          | Notes |
-| -------- | --------------------------------------------- | ----- |
-| Windows  | `SprintLab Setup x.x.x.exe` (NSIS installer)  | Available on Releases page |
-| macOS    | `SprintLab-x.x.x.dmg`                         | Build from source (see below) |
-| Linux    | `SprintLab-x.x.x.AppImage`                    | Build from source (see below) |
+| Platform | File                                         | Notes                         |
+| -------- | -------------------------------------------- | ----------------------------- |
+| Windows  | `SprintLab Setup x.x.x.exe` (NSIS installer) | Available on Releases page    |
+| macOS    | `SprintLab-x.x.x.dmg`                        | Build from source (see below) |
+| Linux    | `SprintLab-x.x.x.AppImage`                   | Build from source (see below) |
 
 > **Windows users:** Right-click the installer and choose **Run as administrator**. Windows SmartScreen may also show a warning because the binary is not code-signed — click **More info → Run anyway** to proceed.
 
@@ -102,10 +100,10 @@ Video trimming, cropping, and export are handled entirely in the browser using F
 
 ### Desktop
 
-| Concern          | Library / Tool                            |
-| ---------------- | ----------------------------------------- |
-| Shell            | Electron 36                               |
-| Packaging        | electron-builder (NSIS / DMG / AppImage)  |
+| Concern   | Library / Tool                           |
+| --------- | ---------------------------------------- |
+| Shell     | Electron 36                              |
+| Packaging | electron-builder (NSIS / DMG / AppImage) |
 
 ### Frontend
 
@@ -254,6 +252,7 @@ chmod +x build_backend.sh && ./build_backend.sh
 ```
 
 Output:
+
 - **Windows:** `backend/dist/SprintLabBackend.exe`
 - **macOS / Linux:** `backend/dist/SprintLabBackend`
 
@@ -277,22 +276,24 @@ FFmpeg runs locally inside the app (no internet required). Copy the WASM files f
 > **Windows:** Run your terminal **as Administrator**. electron-builder needs symlink privileges for its code-signing tools — without it the NSIS step will fail.
 
 **Windows CMD:**
+
 ```
 copy frontend\node_modules\@ffmpeg\core\dist\esm\ffmpeg-core.js frontend\public\ffmpeg\ && copy frontend\node_modules\@ffmpeg\core\dist\esm\ffmpeg-core.wasm frontend\public\ffmpeg\ && npm run electron:build
 ```
 
 **macOS / Linux:**
+
 ```bash
 cp frontend/node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.js frontend/public/ffmpeg/ && cp frontend/node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.wasm frontend/public/ffmpeg/ && npm run electron:build
 ```
 
 Output in `dist-electron/`:
 
-| Platform | Output file                                                 |
-| -------- | ----------------------------------------------------------- |
-| Windows  | `SprintLab Setup x.x.x.exe`                                 |
-| macOS    | `SprintLab-x.x.x.dmg` _(must build on macOS)_               |
-| Linux    | `SprintLab-x.x.x.AppImage`                                  |
+| Platform | Output file                                   |
+| -------- | --------------------------------------------- |
+| Windows  | `SprintLab Setup x.x.x.exe`                   |
+| macOS    | `SprintLab-x.x.x.dmg` _(must build on macOS)_ |
+| Linux    | `SprintLab-x.x.x.AppImage`                    |
 
 > **Cross-compilation:** macOS `.dmg` can only be produced on a macOS machine. Windows and Linux builds can be produced on any platform with the right toolchain.
 
@@ -322,6 +323,7 @@ gh auth login
 Run this from the project root after the build completes.
 
 **macOS / Linux (bash — backslash line continuation works):**
+
 ```bash
 gh release create v1.0.0 \
   "dist-electron/SprintLab Setup 1.0.0.exe" \
@@ -330,6 +332,7 @@ gh release create v1.0.0 \
 ```
 
 **Windows CMD (must be a single line — no backslash continuation):**
+
 ```
 gh release create v1.0.0 "dist-electron/SprintLab Setup 1.0.0.exe" --title "SprintLab v1.0.0" --notes "Windows installer. macOS and Linux users: build from source (see README)."
 ```
