@@ -2,7 +2,7 @@
 
 ## Next Steps
 
-Just continue
+Need to create a section in the READ ME.md and docs explaining the limitations of the tool.
 
 ### UI Revamp
 
