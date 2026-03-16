@@ -2,7 +2,7 @@
 
 ## Next Steps
 
-- Change image in the README.md to a suitable .GIF that demonstrates the project's features succintly.
+-
 
 ## Future Work
 
