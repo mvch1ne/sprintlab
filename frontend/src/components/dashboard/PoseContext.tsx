@@ -7,8 +7,8 @@ import {
   useContext,
   useState,
   useCallback,
-  ReactNode,
 } from 'react';
+import type { ReactNode } from 'react';
 import type { LandmarkerStatus } from './viewport/PoseEngine/usePoseLandmarker';
 export type { LandmarkerStatus };
 

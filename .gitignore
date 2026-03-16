@@ -6,6 +6,9 @@ node_modules/
 docs/node_modules/
 package-lock.json
 
+# Bundled FFmpeg WASM (large binary, reproducible via npm install + copy)
+frontend/public/ffmpeg/
+
 # Electron build outputs
 dist-electron/
 build/

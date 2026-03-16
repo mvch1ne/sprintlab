@@ -63,16 +63,6 @@ export const CropOverlay = ({
   // IMPORTANT: use offsetWidth/offsetHeight (natural layout size, pre-transform)
   // not getBoundingClientRect (which returns post-transform scaled size).
 
-  const getContain = useCallback((): ReturnType<typeof containRect> => {
-    const el = canvasRef.current;
-    if (!el) return { left: 0, top: 0, width: 1, height: 1 };
-    return containRect(
-      el.offsetWidth,
-      el.offsetHeight,
-      videoWidth,
-      videoHeight,
-    );
-  }, [videoWidth, videoHeight]);
 
   // screen px (relative to viewport) → normalised video coord 0-1
   const screenToNorm = useCallback(

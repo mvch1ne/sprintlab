@@ -123,13 +123,11 @@ function JointRow({
 // ── Ground contact table ───────────────────────────────────────────────────────
 function ContactsTab({
   contacts,
-  fps,
   calibrated,
   onDelete,
   onEdit,
 }: {
   contacts: GroundContactEvent[];
-  fps: number;
   calibrated: boolean;
   onDelete?: ((id: string) => void) | null;
   onEdit?:
@@ -887,9 +885,6 @@ function CoMTab({
     const flyDistance = Math.abs(interpX(exitFrac) - interpX(entryFrac));
     const flyVelocity = flyTime > 0 ? flyDistance / flyTime : 0;
 
-    const entryFrameDisplay = entryFrac.toFixed(1);
-    const exitFrameDisplay = exitFrac.toFixed(1);
-
     return (
       <div>
         {/* RTL confirmation banner */}
@@ -1155,7 +1150,6 @@ export const Telemetry = () => {
         {tab === 'steps' && (
           <ContactsTab
             contacts={metrics.groundContacts}
-            fps={fps}
             calibrated={cal}
             onDelete={deleteContact}
             onEdit={editContact}

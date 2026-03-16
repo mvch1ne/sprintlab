@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import type { CalibrationData } from './CalibrationAndMeasurements/CalibrationOverlay';
+import type { CalibrationData } from './CalibrationOverlay';
 
 export interface Measurement {
   id: string;

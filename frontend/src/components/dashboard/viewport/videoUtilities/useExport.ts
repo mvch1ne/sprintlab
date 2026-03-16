@@ -1,7 +1,7 @@
 import { useRef, useState, useCallback } from 'react';
 import { fetchFile } from '@ffmpeg/util';
 import { getFFmpeg } from './useFFmpeg';
-import type { CropRect, TrimPoints } from './TrimCropPanel';
+import type { CropRect, TrimPoints } from '../TrimAndCrop/TrimCropPanel';
 
 export type ExportStatus = 'idle' | 'loading' | 'running' | 'done' | 'error';
 

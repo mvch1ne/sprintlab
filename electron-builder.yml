@@ -12,10 +12,11 @@ files:
 
 # Python backend binary bundled as an extra resource
 extraResources:
-  - from: backend/dist/SprintLabBackend
-    to: backend
-    filter:
-      - "**/*"
+  - from: backend/dist/SprintLabBackend.exe
+    to: backend/SprintLabBackend.exe
+  # FFmpeg WASM files outside the asar so fs.readFileSync can read them reliably
+  - from: frontend/public/ffmpeg
+    to: ffmpeg
 
 win:
   target:

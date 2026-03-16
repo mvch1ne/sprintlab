@@ -127,8 +127,8 @@ Video trimming, cropping, and export are handled entirely in the browser using F
 ```
 sprintlab/
 ├── electron/
-│   ├── main.js                              # Electron main process (window, backend spawn, menu)
-│   └── preload.js                           # Context bridge (contextIsolation)
+│   ├── main.js                              # Electron main process (window, backend spawn, static server, menu)
+│   └── preload.js                           # Context bridge (fullscreen IPC, resource file reader)
 │
 ├── frontend/
 │   ├── src/
@@ -232,6 +232,8 @@ Produces a self-contained installer with the Python backend bundled — no Pytho
 
 PyInstaller compiles the FastAPI server and all ML dependencies into a standalone binary.
 
+> **Windows:** Run this step in a **non-administrator** terminal. PyInstaller warns when run as admin and will block it in a future version. Only the packaging step (Step 3) needs Administrator.
+
 ```bash
 # Windows
 cd backend
@@ -242,9 +244,13 @@ cd backend
 chmod +x build_backend.sh && ./build_backend.sh
 ```
 
-Output: `backend/dist/SprintLabBackend/SprintLabBackend[.exe]`
+Output:
+- **Windows:** `backend/dist/SprintLabBackend.exe`
+- **macOS / Linux:** `backend/dist/SprintLabBackend`
 
 > **onnxruntime on Windows:** if PyInstaller misses any DLLs, add them to the `binaries` list in `backend/SprintLabBackend.spec` and rebuild.
+
+> **`uvicorn.run()` is required:** `server.py` must have `if __name__ == "__main__": uvicorn.run(...)` at the bottom — this is what starts the HTTP server inside the packaged binary. Without it the binary loads the models and exits silently. The `uvicorn server:app` CLI used in dev mode bypasses this block so dev is unaffected.
 
 ### Step 2 — Generate app icons (first time only)
 
@@ -255,19 +261,71 @@ npm run electron:icons
 
 This renders the SprintLab SVG logo to `build/icon.png` (1024×1024) and generates `.ico` / `.icns` for Windows and macOS.
 
-### Step 3 — Package
+### Step 3 — Copy FFmpeg WASM files and package
 
-```bash
-npm run electron:build
+FFmpeg runs locally inside the app (no internet required). Copy the WASM files from the installed package, then build — run as a single chained command:
+
+> **Windows:** Run your terminal **as Administrator**. electron-builder needs symlink privileges for its code-signing tools — without it the NSIS step will fail.
+
+**Windows CMD:**
 ```
+copy frontend\node_modules\@ffmpeg\core\dist\esm\ffmpeg-core.js frontend\public\ffmpeg\ && copy frontend\node_modules\@ffmpeg\core\dist\esm\ffmpeg-core.wasm frontend\public\ffmpeg\ && npm run electron:build
+```
+
+**macOS / Linux:**
+```bash
+cp frontend/node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.js frontend/public/ffmpeg/ && cp frontend/node_modules/@ffmpeg/core/dist/esm/ffmpeg-core.wasm frontend/public/ffmpeg/ && npm run electron:build
+```
+
+Output in `dist-electron/`:
 
 | Platform | Output file                                                 |
 | -------- | ----------------------------------------------------------- |
-| Windows  | `dist-electron/SprintLab Setup x.x.x.exe`                   |
-| macOS    | `dist-electron/SprintLab-x.x.x.dmg` _(must build on macOS)_ |
-| Linux    | `dist-electron/SprintLab-x.x.x.AppImage`                    |
+| Windows  | `SprintLab Setup x.x.x.exe`                                 |
+| macOS    | `SprintLab-x.x.x.dmg` _(must build on macOS)_               |
+| Linux    | `SprintLab-x.x.x.AppImage`                                  |
 
 > **Cross-compilation:** macOS `.dmg` can only be produced on a macOS machine. Windows and Linux builds can be produced on any platform with the right toolchain.
+
+### Step 4 — Publish to GitHub Releases
+
+Requires the [GitHub CLI](https://cli.github.com/) (`gh`). Install it if you haven't already:
+
+```bash
+# Windows (if winget shows an msstore error, ignore it — use --source winget explicitly)
+winget install GitHub.cli --source winget
+
+# macOS
+brew install gh
+
+# Linux
+sudo apt install gh   # Debian/Ubuntu
+```
+
+> **Windows:** After installing, **close and reopen your terminal** so the PATH update takes effect, then run `gh auth login`.
+
+Then authenticate once:
+
+```bash
+gh auth login
+```
+
+Run this from the project root after the build completes.
+
+**macOS / Linux (bash — backslash line continuation works):**
+```bash
+gh release create v1.0.0 \
+  "dist-electron/SprintLab Setup 1.0.0.exe" \
+  --title "SprintLab v1.0.0" \
+  --notes "Windows installer. macOS and Linux users: build from source (see README)."
+```
+
+**Windows CMD (must be a single line — no backslash continuation):**
+```
+gh release create v1.0.0 "dist-electron/SprintLab Setup 1.0.0.exe" --title "SprintLab v1.0.0" --notes "Windows installer. macOS and Linux users: build from source (see README)."
+```
+
+The installer is attached as a downloadable asset on the [Releases page](https://github.com/mvch1ne/sprintlab/releases). Update the version tag and filename to match your build output.
 
 ### Quick test (no installer)
 
