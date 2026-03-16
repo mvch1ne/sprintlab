@@ -4,6 +4,19 @@
 
 The Telemetry panel displays all computed sprint metrics. It reads from `VideoContext` and re-renders whenever the current frame or the computed metrics change.
 
+## Component Structure
+
+The Telemetry panel is a thin tab shell that composes sub-components:
+
+| File | Purpose |
+|------|---------|
+| `Telemetry.tsx` | Tab shell — reads context, renders active tab |
+| `Sparkline.tsx` | Reusable SVG sparkline with optional playhead |
+| `SectionHead.tsx` | Sticky section header with colored indicator dot |
+| `JointRow.tsx` | Joint angle display with inline sparkline |
+| `ContactsTab.tsx` | Symmetry grid + per-step editable table |
+| `CoMTab.tsx` | Static mode (displacement/speed/accel) + flying mode (zone timing) |
+
 ## Tab Layout
 
 The panel is divided into four tabs:

@@ -1,49 +1,13 @@
-import { useEffect, useCallback } from 'react';
-import {
-  Play,
-  Pause,
-  SkipBack,
-  SkipForward,
-  ChevronFirst,
-  ChevronLast,
-  Gauge,
-  Flag,
-  Ruler,
-  Crosshair,
-  Triangle,
-  PanelRight,
-  ScanLine,
-  Settings2,
-  Scissors,
-  MapPin,
-  Activity,
-  EyeOff,
-  Eye,
-} from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Scissors } from 'lucide-react';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import type { CalibrationData } from './CalibrationAndMeasurements/CalibrationOverlay';
 import type { LandmarkerStatus } from './PoseEngine/usePoseLandmarker';
-
-const SPEED_OPTIONS = [0.0625, 0.125, 0.25, 0.5, 1, 1.5, 2, 4];
-const SPEED_LABELS: Record<number, string> = {
-  0.0625: '1/16×',
-  0.125: '1/8×',
-  0.25: '1/4×',
-  0.5: '1/2×',
-};
-const speedLabel = (s: number) => SPEED_LABELS[s] ?? `${s}×`;
+import { IconBtn, Readout, Separator } from './controls/shared';
+import { Scrubber } from './controls/Scrubber';
+import { PlaybackControls } from './controls/PlaybackControls';
+import { CalibrationControls } from './controls/CalibrationControls';
+import { PoseControls } from './controls/PoseControls';
+import { SprintStartRow, CoMControls } from './controls/SprintControls';
 
 interface ControlPanelProps {
   currentFrame: number;
@@ -89,59 +53,6 @@ interface ControlPanelProps {
   disabled?: boolean;
 }
 
-function IconBtn({
-  onClick,
-  tooltip,
-  children,
-  disabled = false,
-  active = false,
-}: {
-  onClick: () => void;
-  tooltip: string;
-  children: React.ReactNode;
-  disabled?: boolean;
-  active?: boolean;
-}) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          onClick={onClick}
-          disabled={disabled}
-          className={`
-            flex items-center justify-center w-7 h-7 rounded-sm
-            border transition-all duration-100 select-none
-            ${
-              disabled
-                ? 'opacity-25 cursor-not-allowed border-transparent'
-                : active
-                  ? 'bg-sky-600/20 border-sky-500/60 text-sky-500 cursor-pointer'
-                  : 'border-zinc-400 text-zinc-700 dark:text-zinc-300 hover:border-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-950 dark:hover:border-zinc-500 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 cursor-pointer'
-            }
-          `}
-        >
-          {children}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent>{tooltip}</TooltipContent>
-    </Tooltip>
-  );
-}
-
-function Readout({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col items-center gap-0.5">
-      <span className="text-[11px] uppercase tracking-widest text-zinc-700 dark:text-zinc-300">
-        {label}
-      </span>
-      <span className="text-xs text-sky-600 dark:text-sky-300 tabular-nums leading-none font-mono">
-        {value}
-      </span>
-    </div>
-  );
-}
-
-
 export function ControlPanel({
   currentFrame,
   totalFrames,
@@ -185,8 +96,8 @@ export function ControlPanel({
 }: ControlPanelProps) {
   const effectiveFps = (fps || 30) * (playbackRate || 1);
   const frameDuration = 1 / (fps || 30);
-  const fpsDisplay = disabled ? '—' : `${effectiveFps}`;
-  const deltaDisplay = disabled ? '—' : `${frameDuration.toFixed(4)}s`;
+  const fpsDisplay = disabled ? '\u2014' : `${effectiveFps}`;
+  const deltaDisplay = disabled ? '\u2014' : `${frameDuration.toFixed(4)}s`;
 
   const frameToTimecode = (frame: number) => {
     const f = Math.max(0, frame);
@@ -200,63 +111,7 @@ export function ControlPanel({
 
   const relativeFrame = startFrame !== null ? currentFrame - startFrame : null;
   const absRelFrame = relativeFrame !== null ? Math.abs(relativeFrame) : null;
-  const timePrefix = relativeFrame !== null && relativeFrame < 0 ? '−' : '';
-
-  const stepForward = useCallback(() => {
-    setIsPlaying(false);
-    onSeekToFrame(Math.min(currentFrame + 1, totalFrames - 1));
-  }, [currentFrame, totalFrames, onSeekToFrame, setIsPlaying]);
-
-  const stepBack = useCallback(() => {
-    setIsPlaying(false);
-    onSeekToFrame(Math.max(currentFrame - 1, 0));
-  }, [currentFrame, onSeekToFrame, setIsPlaying]);
-
-  const jumpToStart = () => {
-    setIsPlaying(false);
-    onSeekToFrame(0);
-  };
-  const jumpToEnd = () => {
-    setIsPlaying(false);
-    onSeekToFrame(totalFrames - 1);
-  };
-
-  useEffect(() => {
-    if (disabled) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (['ArrowRight', 'ArrowLeft', ' '].includes(e.key)) e.preventDefault();
-      if (e.key === 'ArrowRight') stepForward();
-      if (e.key === 'ArrowLeft') stepBack();
-      if (e.key === ' ') {
-        if (videoEnded) {
-          onSeekToFrame(0);
-          setIsPlaying(true);
-        } else setIsPlaying((p) => !p);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [
-    stepForward,
-    stepBack,
-    setIsPlaying,
-    disabled,
-    videoEnded,
-    onSeekToFrame,
-  ]);
-
-  const progress =
-    totalFrames > 1 ? (currentFrame / (totalFrames - 1)) * 100 : 0;
-
-  const handleScrub = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (disabled) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const ratio = Math.max(
-      0,
-      Math.min(1, (e.clientX - rect.left) / rect.width),
-    );
-    onSeekToFrame(Math.round(ratio * (totalFrames - 1)));
-  };
+  const timePrefix = relativeFrame !== null && relativeFrame < 0 ? '\u2212' : '';
 
   return (
     <TooltipProvider delayDuration={400}>
@@ -280,82 +135,22 @@ export function ControlPanel({
 
         <div className="MainControls flex-1 border border-t-0 border-zinc-400 dark:border-zinc-600 flex flex-col overflow-hidden">
           {/* Scrubber */}
-          <div className="ScrubberSection px-4 pt-2 pb-1">
-            <div
-              className="relative h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full cursor-pointer group"
-              onClick={handleScrub}
-            >
-              <div
-                className="absolute left-0 top-0 h-full bg-sky-500 dark:bg-sky-600 rounded-full transition-none"
-                style={{ width: `${progress}%` }}
-              />
-              <div
-                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-sky-500 border-2 border-white dark:bg-sky-400 dark:border-zinc-950 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                style={{ left: `calc(${progress}% - 6px)` }}
-              />
-              {Array.from({ length: 25 }, (_, i) => (
-                <div
-                  key={i}
-                  className="absolute top-full mt-0.5 w-px h-1 bg-zinc-300 dark:bg-zinc-600"
-                  style={{ left: `${(i / 24) * 100}%` }}
-                />
-              ))}
-              {startFrame !== null && totalFrames > 1 && (
-                <div
-                  className="-top-1 -bottom-1 absolute w-px bg-orange-400"
-                  style={{ left: `${(startFrame / (totalFrames - 1)) * 100}%` }}
-                />
-              )}
-              {proposedStartFrame !== null && proposedStartFrame !== startFrame && totalFrames > 1 && (
-                <div
-                  className="-top-1 -bottom-1 absolute w-px border-l border-dashed border-emerald-500/60"
-                  style={{ left: `${(proposedStartFrame / (totalFrames - 1)) * 100}%` }}
-                />
-              )}
-            </div>
-          </div>
+          <Scrubber
+            currentFrame={currentFrame}
+            totalFrames={totalFrames}
+            startFrame={startFrame}
+            proposedStartFrame={proposedStartFrame}
+            onSeekToFrame={onSeekToFrame}
+            disabled={disabled}
+          />
 
-          {/* Sprint start row — flag button always visible here, status inline */}
-          <div className="px-4 pb-0.5 flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={startFrame !== null ? onClearStartFrame : onSetStartFrame}
-                  className={`flex items-center justify-center w-6 h-6 rounded-sm border transition-all duration-100 shrink-0 cursor-pointer
-                    ${startFrame !== null
-                      ? 'bg-emerald-600/20 border-emerald-500/60 text-emerald-400'
-                      : 'border-zinc-400 text-zinc-500 dark:border-zinc-600 hover:border-zinc-500 hover:text-zinc-300'}`}
-                >
-                  <Flag size={12} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {startFrame !== null
-                  ? `Sprint start: frame ${startFrame} — click to clear`
-                  : proposedStartFrame != null
-                    ? `Override sprint start (proposed: ${proposedStartFrame})`
-                    : 'Set sprint start (current frame)'}
-              </TooltipContent>
-            </Tooltip>
-            {startFrame !== null ? (
-              <>
-                <span className="text-[9px] font-mono text-emerald-400 tabular-nums">Frame {startFrame} confirmed</span>
-                <button onClick={onClearStartFrame} className="text-[9px] uppercase tracking-widest text-red-500/60 hover:text-red-400 cursor-pointer ml-1">Clear</button>
-              </>
-            ) : proposedStartFrame != null ? (
-              <>
-                <span className="text-[9px] font-mono text-amber-400 tabular-nums">Frame {proposedStartFrame} proposed</span>
-                <button
-                  onClick={onSetStartFrame}
-                  className="text-[9px] uppercase tracking-widest text-emerald-400 hover:text-emerald-300 cursor-pointer border border-emerald-500/40 px-1 rounded-sm"
-                >
-                  Confirm
-                </button>
-              </>
-            ) : (
-              <span className="text-[9px] font-mono text-zinc-600 italic">Set sprint start frame</span>
-            )}
-          </div>
+          {/* Sprint start row */}
+          <SprintStartRow
+            startFrame={startFrame}
+            proposedStartFrame={proposedStartFrame}
+            onSetStartFrame={onSetStartFrame}
+            onClearStartFrame={onClearStartFrame}
+          />
 
           {/* Readouts */}
           <div className="ReadoutsRow flex justify-between items-center px-4 pt-1 pb-0.5">
@@ -369,181 +164,55 @@ export function ControlPanel({
             />
             <Readout
               label="Duration"
-              value={totalFrames > 1 ? frameToTimecode(totalFrames - 1) : '—'}
+              value={totalFrames > 1 ? frameToTimecode(totalFrames - 1) : '\u2014'}
             />
             <Readout label="FPS" value={fpsDisplay} />
-            <Readout label="∆/frame" value={deltaDisplay} />
+            <Readout label="\u2206/frame" value={deltaDisplay} />
           </div>
 
           <div className="mx-4 border-t border-zinc-400 dark:border-zinc-600/60" />
 
           {/* Transport */}
           <div className="ControlInputSection flex flex-1 items-center px-4 gap-2 flex-wrap">
-            <IconBtn onClick={jumpToStart} tooltip="Jump to start">
-              <ChevronFirst size={14} />
-            </IconBtn>
-            <IconBtn
-              onClick={stepBack}
-              tooltip="Step back (←)"
-              disabled={currentFrame === 0}
-            >
-              <SkipBack size={14} />
-            </IconBtn>
+            <PlaybackControls
+              currentFrame={currentFrame}
+              totalFrames={totalFrames}
+              fps={fps}
+              isPlaying={isPlaying}
+              setIsPlaying={setIsPlaying}
+              videoEnded={videoEnded}
+              playbackRate={playbackRate}
+              setPlaybackRate={setPlaybackRate}
+              onSeekToFrame={onSeekToFrame}
+              disabled={disabled}
+            />
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => {
-                    if (videoEnded) {
-                      onSeekToFrame(0);
-                      setIsPlaying(true);
-                    } else setIsPlaying((p) => !p);
-                  }}
-                  className={`flex items-center justify-center w-9 h-9 rounded-sm border transition-all duration-150 cursor-pointer
-                    ${
-                      isPlaying
-                        ? 'bg-sky-500 border-sky-400 text-white shadow-[0_0_12px_rgba(14,165,233,0.4)] dark:bg-sky-600 dark:border-sky-500'
-                        : 'bg-zinc-100 border-zinc-400 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 hover:border-zinc-500 dark:bg-zinc-950 dark:border-zinc-600 dark:hover:bg-zinc-800'
-                    }`}
-                >
-                  {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isPlaying ? 'Pause (Space)' : 'Play (Space)'}
-              </TooltipContent>
-            </Tooltip>
+            <Separator />
 
-            <IconBtn
-              onClick={stepForward}
-              tooltip="Step forward (→)"
-              disabled={currentFrame === totalFrames - 1}
-            >
-              <SkipForward size={14} />
-            </IconBtn>
-            <IconBtn onClick={jumpToEnd} tooltip="Jump to end">
-              <ChevronLast size={14} />
-            </IconBtn>
+            <CalibrationControls
+              calibration={calibration}
+              onStartCalibration={onStartCalibration}
+              measuringDistance={measuringDistance}
+              measuringAngle={measuringAngle}
+              onToggleMeasuringDistance={onToggleMeasuringDistance}
+              onToggleMeasuringAngle={onToggleMeasuringAngle}
+              measurementCount={measurementCount}
+              showMeasurementPanel={showMeasurementPanel}
+              onToggleMeasurementPanel={onToggleMeasurementPanel}
+            />
 
-            <div className="h-6 w-px bg-zinc-300 dark:bg-zinc-600 mx-1" />
+            <Separator />
 
-            <Select
-              value={String(playbackRate)}
-              onValueChange={(v) => setPlaybackRate(Number(v))}
-            >
-              <SelectTrigger className="h-7 text-xs px-2 bg-zinc-50 border-zinc-400 text-zinc-700 dark:text-zinc-300 hover:border-zinc-500 dark:bg-zinc-950 dark:border-zinc-600 dark:hover:border-zinc-500 cursor-pointer">
-                <Gauge size={12} className="shrink-0" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SPEED_OPTIONS.map((s) => (
-                  <SelectItem key={s} value={String(s)} className="text-xs">
-                    {speedLabel(s)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <PoseControls
+              poseEnabled={poseEnabled}
+              onTogglePose={onTogglePose}
+              poseStatus={poseStatus}
+              backendReachable={backendReachable}
+              showPosePanel={showPosePanel}
+              onTogglePosePanel={onTogglePosePanel}
+            />
 
-            <div className="h-6 w-px bg-zinc-300 dark:bg-zinc-600 mx-1" />
-
-            <IconBtn
-              onClick={onStartCalibration}
-              tooltip={
-                calibration
-                  ? `Calibrated: ${calibration.realMeters}m — click to redo`
-                  : 'Calibrate distance'
-              }
-              active={!!calibration}
-            >
-              <Ruler size={14} />
-            </IconBtn>
-
-            <IconBtn
-              onClick={onToggleMeasuringDistance}
-              tooltip={
-                !calibration
-                  ? 'Calibrate first to measure'
-                  : measuringDistance
-                    ? 'Stop measuring distance'
-                    : 'Measure distance'
-              }
-              active={measuringDistance}
-              disabled={!calibration}
-            >
-              <Crosshair size={14} />
-            </IconBtn>
-
-            <IconBtn
-              onClick={onToggleMeasuringAngle}
-              tooltip={
-                !calibration
-                  ? 'Calibrate first to measure angles'
-                  : measuringAngle
-                    ? 'Stop measuring angle'
-                    : 'Measure angle'
-              }
-              active={measuringAngle}
-              disabled={!calibration}
-            >
-              <Triangle size={14} />
-            </IconBtn>
-
-            <IconBtn
-              onClick={onToggleMeasurementPanel}
-              tooltip={
-                showMeasurementPanel
-                  ? 'Hide measurements'
-                  : `Show measurements${measurementCount > 0 ? ` (${measurementCount})` : ''}`
-              }
-              active={showMeasurementPanel}
-              disabled={!calibration}
-            >
-              <PanelRight size={14} />
-            </IconBtn>
-
-            <div className="h-6 w-px bg-zinc-300 dark:bg-zinc-600 mx-1" />
-
-            <div className="relative">
-              <IconBtn
-                onClick={onTogglePose}
-                tooltip={
-                  poseStatus === 'loading'
-                    ? 'Loading pose model…'
-                    : poseStatus === 'error'
-                      ? 'Pose model failed to load'
-                      : poseEnabled
-                        ? 'Disable pose detection'
-                        : 'Enable pose detection'
-                }
-                active={poseEnabled}
-              >
-                {poseStatus === 'loading' ? (
-                  <span className="text-[10px] animate-pulse">…</span>
-                ) : (
-                  <ScanLine size={14} />
-                )}
-              </IconBtn>
-              {/* Backend reachability dot */}
-              <span
-                className={`absolute top-0 right-0 w-1.5 h-1.5 rounded-full border border-zinc-900 ${
-                  backendReachable ? 'bg-emerald-400' : 'bg-zinc-600'
-                }`}
-                title={backendReachable ? 'Backend ready' : 'Backend unreachable'}
-              />
-            </div>
-
-            <IconBtn
-              onClick={onTogglePosePanel}
-              tooltip={
-                showPosePanel ? 'Hide landmark config' : 'Configure landmarks'
-              }
-              active={showPosePanel}
-              disabled={!poseEnabled}
-            >
-              <Settings2 size={14} />
-            </IconBtn>
-
-            <div className="h-6 w-px bg-zinc-300 dark:bg-zinc-600 mx-1" />
+            <Separator />
 
             <IconBtn
               onClick={onToggleTrimCropPanel}
@@ -553,46 +222,20 @@ export function ControlPanel({
               <Scissors size={14} />
             </IconBtn>
 
-            {poseReady && (
-              <>
-                <div className="h-6 w-px bg-zinc-300 dark:bg-zinc-600 mx-1" />
-                <IconBtn
-                  onClick={() => onToggleCoM?.()}
-                  tooltip={showCoM ? 'Hide CoM marker' : 'Show CoM marker'}
-                  active={showCoM}
-                >
-                  <MapPin size={14} />
-                </IconBtn>
-                <IconBtn
-                  onClick={() => onRecordCoMEvent?.()}
-                  tooltip="Record CoM event at current frame"
-                >
-                  <Activity size={14} />
-                </IconBtn>
-                {comEventCount > 0 && (
-                  <>
-                    <IconBtn
-                      onClick={() => onToggleCoMEvents?.()}
-                      tooltip={showCoMEvents ? 'Hide CoM events' : 'Show CoM events'}
-                      active={showCoMEvents}
-                    >
-                      {showCoMEvents ? <Eye size={14} /> : <EyeOff size={14} />}
-                    </IconBtn>
-                    <button
-                      onClick={() => onClearCoMEvents?.()}
-                      className="text-[9px] uppercase tracking-widest text-red-500/70 hover:text-red-400 transition-colors cursor-pointer px-1"
-                      title="Clear all CoM events"
-                    >
-                      {comEventCount} evt
-                    </button>
-                  </>
-                )}
-              </>
-            )}
+            <CoMControls
+              poseReady={poseReady}
+              showCoM={showCoM}
+              onToggleCoM={onToggleCoM}
+              comEventCount={comEventCount}
+              showCoMEvents={showCoMEvents}
+              onToggleCoMEvents={onToggleCoMEvents}
+              onRecordCoMEvent={onRecordCoMEvent}
+              onClearCoMEvents={onClearCoMEvents}
+            />
 
             <div className="ml-auto flex items-center gap-2">
               {[
-                ['←→', 'step'],
+                ['\u2190\u2192', 'step'],
                 ['Space', 'play'],
               ].map(([key, label]) => (
                 <div key={key} className="flex items-center gap-1">

@@ -61,33 +61,41 @@ A pre-built Windows installer is available on the [**Releases page**](https://gi
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  Browser (React SPA)                                    │
-│                                                         │
-│  ┌──────────────┐   ┌──────────────┐  ┌─────────────┐  │
-│  │   Viewport   │   │  Telemetry   │  │  VideoCtx   │  │
-│  │  (overlays,  │   │  (sparklines,│  │  (shared    │  │
-│  │  pose, calib)│   │   contacts)  │  │   state)    │  │
-│  └──────┬───────┘   └──────┬───────┘  └──────┬──────┘  │
-│         │                  │                  │         │
-│         └──────────────────┴──────────────────┘         │
-│                          │                              │
-│              useSprintMetrics (hook)                    │
-│                   sprintMath.ts (pure)                  │
-│                          │                              │
-│              POST /infer/video  ←→  SSE stream          │
-└──────────────────────────┼──────────────────────────────┘
-                           │
-┌──────────────────────────▼──────────────────────────────┐
-│  Backend (FastAPI)                                      │
-│                                                         │
-│  GET  /health         — readiness probe                 │
-│  POST /infer/video    — SSE: progress + keypoint data   │
-│                                                         │
-│  OpenCV → frame extraction                              │
-│  RTMLib Wholebody3d → 133 keypoints × N frames          │
-│  ONNX Runtime → CPU inference                           │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  Browser (React SPA)                                         │
+│                                                              │
+│  ┌──────────────────────────────────────┐  ┌─────────────┐  │
+│  │  Viewport (orchestrator)             │  │  VideoCtx   │  │
+│  │  ┌─────────────────────────────────┐ │  │  (shared    │  │
+│  │  │ useVideoPlayback · useZoomPan   │ │  │   state)    │  │
+│  │  │ useCalibration · useMeasurements│ │  └──────┬──────┘  │
+│  │  │ useSprintMarkers · useCoM       │ │         │         │
+│  │  │ useTrimCrop                     │ │         │         │
+│  │  └─────────────────────────────────┘ │         │         │
+│  └──────────────┬───────────────────────┘         │         │
+│                 │                                  │         │
+│  ┌──────────────┴───────┐                         │         │
+│  │  Telemetry (shell)   │─────────────────────────┘         │
+│  │  ContactsTab · CoMTab│                                   │
+│  │  JointRow · Sparkline│                                   │
+│  └──────────────────────┘                                   │
+│                 │                                            │
+│      useSprintMetrics (hook)                                 │
+│           sprintMath.ts (pure)                               │
+│                 │                                            │
+│      POST /infer/video  ←→  SSE stream                      │
+└─────────────────┼────────────────────────────────────────────┘
+                  │
+┌─────────────────▼────────────────────────────────────────────┐
+│  Backend (FastAPI)                                            │
+│                                                              │
+│  GET  /health         — readiness probe                      │
+│  POST /infer/video    — SSE: progress + keypoint data        │
+│                                                              │
+│  OpenCV → frame extraction                                   │
+│  RTMLib Wholebody3d → 133 keypoints × N frames               │
+│  ONNX Runtime → CPU inference                                │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 The frontend never blocks waiting for inference to finish. The backend streams a `progress` SSE event after every frame (frame index, %, FPS, ETA) and a single `result` event at the end containing all frame data. The frontend stores keypoints in a `Map<frameIdx, Keypoint[]>` and computes all metrics in a single `useMemo` pass once the result arrives.
@@ -139,25 +147,46 @@ sprintlab/
 │
 ├── frontend/
 │   ├── src/
+│   │   ├── hooks/                             # Custom hooks extracted from Viewport
+│   │   │   ├── useVideoPlayback.ts            # Video loading, playback state, frame tracking
+│   │   │   ├── useZoomPan.ts                  # Viewport zoom/pan transforms
+│   │   │   ├── useCalibration.ts              # 2-point scale reference calibration
+│   │   │   ├── useMeasurements.ts             # Distance & angle measurement tools
+│   │   │   ├── useSprintMarkers.ts            # Sprint markers, manual contacts, merged contacts
+│   │   │   ├── useCoM.ts                      # Centre of Mass display & events
+│   │   │   └── useTrimCrop.ts                 # Trim & crop panel state
 │   │   ├── components/
 │   │   │   ├── dashboard/
 │   │   │   │   ├── viewport/
-│   │   │   │   │   ├── PoseEngine/          # Pose detection + skeleton overlay
+│   │   │   │   │   ├── PoseEngine/            # Pose detection + skeleton overlay
 │   │   │   │   │   ├── CalibrationAndMeasurements/  # Calibration + measurement tools
-│   │   │   │   │   ├── TrimAndCrop/         # FFmpeg.js trim/crop UI
-│   │   │   │   │   ├── StatusBar/           # Inference progress indicator
-│   │   │   │   │   ├── videoUtilities/      # Export + frame helpers
-│   │   │   │   │   └── Viewport.tsx         # Central video + overlay orchestrator
+│   │   │   │   │   ├── TrimAndCrop/           # FFmpeg.js trim/crop UI
+│   │   │   │   │   ├── StatusBar/             # Inference progress indicator
+│   │   │   │   │   ├── videoUtilities/        # Export + frame helpers
+│   │   │   │   │   ├── controls/              # Split control panel sub-components
+│   │   │   │   │   │   ├── PlaybackControls.tsx
+│   │   │   │   │   │   ├── CalibrationControls.tsx
+│   │   │   │   │   │   ├── PoseControls.tsx
+│   │   │   │   │   │   ├── SprintControls.tsx
+│   │   │   │   │   │   ├── Scrubber.tsx
+│   │   │   │   │   │   └── shared.tsx         # IconBtn, Readout, Separator
+│   │   │   │   │   ├── Viewport.tsx           # Orchestrator — composes hooks + overlays
+│   │   │   │   │   └── ControlPanel.tsx       # Thin layout composing control groups
 │   │   │   │   ├── telemetry/
-│   │   │   │   │   └── Telemetry.tsx        # Metrics panel (sparklines + contacts table)
-│   │   │   │   ├── useSprintMetrics.ts      # React hook — metrics computation
-│   │   │   │   ├── sprintMath.ts            # Pure math functions (testable, no React)
-│   │   │   │   ├── VideoContext.tsx          # Shared video + metrics state
-│   │   │   │   └── PoseContext.tsx           # Pose processing status
-│   │   │   ├── layout/                      # App shell (Header, Dashboard)
-│   │   │   └── ui/                          # Shared UI primitives
-│   │   ├── lib/                             # Utility functions
-│   │   ├── test/                            # Vitest setup
+│   │   │   │   │   ├── Telemetry.tsx          # Tab shell — composes sub-components
+│   │   │   │   │   ├── Sparkline.tsx          # Reusable SVG sparkline
+│   │   │   │   │   ├── SectionHead.tsx        # Sticky section header
+│   │   │   │   │   ├── JointRow.tsx           # Joint angle row with sparkline
+│   │   │   │   │   ├── ContactsTab.tsx        # Symmetry grid + per-step table
+│   │   │   │   │   └── CoMTab.tsx             # Static + flying mode CoM analysis
+│   │   │   │   ├── useSprintMetrics.ts        # React hook — metrics computation
+│   │   │   │   ├── sprintMath.ts              # Pure math functions (testable, no React)
+│   │   │   │   ├── VideoContext.tsx            # Shared video + metrics state
+│   │   │   │   └── PoseContext.tsx             # Pose processing status
+│   │   │   ├── layout/                        # App shell (Header, Dashboard)
+│   │   │   └── ui/                            # Shared UI primitives
+│   │   ├── lib/                               # Utility functions
+│   │   ├── test/                              # Vitest setup
 │   │   ├── App.tsx
 │   │   └── main.tsx
 │   ├── vitest.config.ts

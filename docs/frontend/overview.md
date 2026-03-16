@@ -18,25 +18,46 @@ The frontend is a React 19 single-page application written in TypeScript, built 
 
 ```
 frontend/src/
+├── hooks/                             # Custom hooks extracted from Viewport
+│   ├── useVideoPlayback.ts            # Video loading, playback, frame tracking
+│   ├── useZoomPan.ts                  # Viewport zoom/pan transforms
+│   ├── useCalibration.ts              # 2-point scale reference calibration
+│   ├── useMeasurements.ts             # Distance & angle measurements
+│   ├── useSprintMarkers.ts            # Sprint markers, manual/merged contacts
+│   ├── useCoM.ts                      # Centre of Mass display & events
+│   └── useTrimCrop.ts                 # Trim & crop panel state
 ├── components/
 │   ├── dashboard/
 │   │   ├── viewport/
-│   │   │   ├── PoseEngine/          # Pose detection + skeleton overlay
+│   │   │   ├── PoseEngine/            # Pose detection + skeleton overlay
 │   │   │   ├── CalibrationAndMeasurements/
 │   │   │   ├── TrimAndCrop/
 │   │   │   ├── StatusBar/
-│   │   │   ├── videoUtilities/      # Export helpers
-│   │   │   └── Viewport.tsx         # Central orchestrator
+│   │   │   ├── videoUtilities/        # Export helpers
+│   │   │   ├── controls/             # Split control panel sub-components
+│   │   │   │   ├── PlaybackControls.tsx
+│   │   │   │   ├── CalibrationControls.tsx
+│   │   │   │   ├── PoseControls.tsx
+│   │   │   │   ├── SprintControls.tsx
+│   │   │   │   ├── Scrubber.tsx
+│   │   │   │   └── shared.tsx
+│   │   │   ├── Viewport.tsx           # Orchestrator — composes hooks + overlays
+│   │   │   └── ControlPanel.tsx       # Thin layout composing control groups
 │   │   ├── telemetry/
-│   │   │   └── Telemetry.tsx        # Metrics panel
-│   │   ├── useSprintMetrics.ts      # React hook — metrics computation
-│   │   ├── sprintMath.ts            # Pure math (no React)
+│   │   │   ├── Telemetry.tsx          # Tab shell — composes sub-components
+│   │   │   ├── Sparkline.tsx          # Reusable SVG sparkline
+│   │   │   ├── SectionHead.tsx        # Sticky section header
+│   │   │   ├── JointRow.tsx           # Joint angle row with sparkline
+│   │   │   ├── ContactsTab.tsx        # Symmetry grid + per-step table
+│   │   │   └── CoMTab.tsx             # Static + flying mode CoM analysis
+│   │   ├── useSprintMetrics.ts        # React hook — metrics computation
+│   │   ├── sprintMath.ts              # Pure math (no React)
 │   │   ├── VideoContext.tsx
 │   │   └── PoseContext.tsx
-│   ├── layout/                      # Header, Dashboard shell
-│   └── ui/                          # Shared Shadcn components
-├── lib/                             # Utilities
-└── test/                            # Vitest setup
+│   ├── layout/                        # Header, Dashboard shell
+│   └── ui/                            # Shared Shadcn components
+├── lib/                               # Utilities
+└── test/                              # Vitest setup
 ```
 
 ## Component Hierarchy
@@ -44,15 +65,41 @@ frontend/src/
 ```
 App
 └── Dashboard
-    ├── Viewport          ← left panel: video + all overlays
+    ├── Viewport                ← left panel: orchestrator composing 7 hooks
+    │   ├── VideoLayer
     │   ├── PoseOverlay
     │   ├── CalibrationOverlay
     │   ├── MeasurementOverlay
-    │   └── CropOverlay
-    └── Telemetry         ← right panel: metrics + charts
+    │   ├── CropOverlay
+    │   └── ControlPanel        ← thin layout composing control sub-components
+    │       ├── PlaybackControls
+    │       ├── CalibrationControls
+    │       ├── PoseControls
+    │       ├── SprintControls
+    │       └── Scrubber
+    └── Telemetry               ← right panel: tab shell composing sub-components
+        ├── ContactsTab
+        ├── JointRow + Sparkline
+        └── CoMTab
 ```
 
 Both `Viewport` and `Telemetry` read from and write to `VideoContext`. They do not pass props to each other directly.
+
+## Hook Architecture
+
+Viewport composes seven custom hooks that each own a slice of state. This keeps the orchestrator focused on layout and cross-hook coordination:
+
+| Hook | Owns |
+|------|------|
+| `useVideoPlayback` | Video file loading, playback state, frame tracking |
+| `useZoomPan` | Viewport scale/translate transforms |
+| `useCalibration` | 2-point reference line calibration |
+| `useMeasurements` | Distance & angle measurement overlays |
+| `useSprintMarkers` | Sprint markers, manual contacts, merged contact list |
+| `useCoM` | Centre of Mass visibility & recorded events |
+| `useTrimCrop` | Trim/crop panel and crop rect state |
+
+When a new video is loaded, `useVideoPlayback` calls a `resetAll` callback that resets all other hooks. This callback is assigned via a ref to solve the circular initialization order (hooks declared before the callback can reference hooks declared after).
 
 ## Key Data Types
 
