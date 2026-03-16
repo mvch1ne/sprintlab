@@ -2,8 +2,6 @@
 
 ## Next Steps
 
-Need to create a section in the READ ME.md and docs explaining the limitations of the tool.
-
 ### UI Revamp
 
 - Phase 0: Foundation — ✅ Done. Extracted 7 hooks from Viewport (1575→889 lines), split Telemetry into 5 sub-components (1309→244 lines), split ControlPanel into 6 sub-components (613→257 lines). UIContext deferred to Phase 1.
@@ -14,6 +12,8 @@ Need to create a section in the READ ME.md and docs explaining the limitations o
 - Phase 5: Annotation Layer — Frame-pinned drawing tools (pen, arrow, circle, text) with PNG export for coach-athlete feedback
 - Phase 6: Split-View Comparison — Side-by-side or overlay dual-video mode with synced playback and telemetry diff for athlete comparison
 - Phase 7: Detachable Panels — Electron-only pop-out windows for telemetry/timeline on secondary monitors
+
+- Review limitations.md and get work on fixing what's fixable
 
 ## Future Work
 
