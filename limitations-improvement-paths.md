@@ -265,3 +265,49 @@ SprintLab's edge is specificity: a serious open-source sprint biomechanics tool 
 **The plan:** Mature the sprint tool. Validate against lab data. Ship the improvements in this document. Build credibility through depth. If team sports opportunities emerge from that credibility — a club or league approaches with a specific need — that's a conversation worth having. But cold-entering a saturated market while the core product is still mid-build is how both efforts end up half-finished.
 
 Build the thing only you can build. The money follows credibility, and credibility comes from depth, not breadth.
+
+---
+
+## Long-Term Vision: The Fully Instrumented Track
+
+The logical endpoint of SprintLab's trajectory is a permanently instrumented track facility where every training session automatically produces research-grade biomechanical data for every athlete, with no markers, no manual setup, and no post-processing. A facility where stepping onto the track means being tracked, identified, and analyzed in full 3D.
+
+### What the system looks like
+
+**Indoor track (200m):**
+
+- 40–60 high-resolution machine vision cameras (4K minimum) mounted at two heights: elevated for top-down global tracking and athlete identification, and trackside at hip height for sagittal-plane biomechanics. Spaced at 5–10m intervals for continuous overlapping coverage. All cameras hardware-synced to a common timecode (genlock or PTP — software sync isn't precise enough for biomechanics).
+- Force plates embedded flush in the track surface at strategic positions: start area, bend entries/exits, and a straight section for max velocity assessment. Full-track force plate coverage is prohibitively expensive and structurally complex, but 6–10 strategically placed plates (Kistler or AMTI, instrumented runway style) capture kinetics at the positions that matter most.
+- Environmental sensors (temperature, humidity, air pressure) for normalizing performance data across sessions.
+- Athlete identification via RFID or UWB tags (wristband or shoe clip) for coarse identity, refined by vision-based appearance models that propagate identity across all cameras through the spatial model.
+
+**The software stack is the real product:**
+
+1. Calibrate all cameras into a unified world coordinate system using known points on the track (lane markings are ideal).
+2. Run pose estimation on every camera feed.
+3. Fuse multi-view pose estimates into a single 3D skeletal reconstruction per athlete per frame — true 3D biomechanics from multi-view triangulation, not monocular approximation. This eliminates the depth ambiguity that is SprintLab's deepest current limitation.
+4. Register force plate data to the corresponding video frames via timecode.
+5. Build the biomechanics intelligence layer on top of the fused 3D data — every metric in this document, computed at research-grade accuracy, automatically, for every athlete on every session.
+
+### Cost reality
+
+Hardware alone is $500k–$1M: cameras ($3–5k each × 40–60), GPU compute cluster for real-time multi-stream inference, force plates ($20–40k each × 6–10), high-bandwidth synchronized networking, and physical installation. The software — multi-camera calibration, real-time multi-person pose estimation, multi-view 3D fusion, persistent athlete tracking, and the intelligence layer — is a team of engineers working for years.
+
+### Who pays for it
+
+The cost only makes sense if amortized across thousands of sessions over years, where the per-session cost drops and the longitudinal dataset becomes extraordinarily valuable. Plausible buyers: a national athletics federation (British Athletics, USATF, a Gulf state federation), a private elite training facility (IMG Academy), or a university with strong athletics and research ambitions funding through grants.
+
+### Outdoor extension
+
+An outdoor 100m/400m track is harder — variable lighting, weather exposure, wider area to cover — but the core architecture is the same. Weatherproofed camera housings, IR-capable cameras for low-light sessions, and a more robust calibration system that accounts for thermal expansion of the track and camera mounts. The software stack transfers directly.
+
+### Path to getting there
+
+This is not a "raise money and build it" project. Each step proves out the next:
+
+1. **Now:** Single-camera SprintLab — validate against lab data, ship the improvements in this document.
+2. **Next:** Multi-camera stitching (5 phones, 100m) — prove the spatial registration and temporal sync work at low cost.
+3. **Then:** Fixed multi-camera installation in a single training facility — prove the continuous tracking and athlete identification work.
+4. **Endgame:** Full instrumentation with force plates and real-time 3D fusion — pitch to a federation or facility with the budget and the need, backed by validated results from every prior step.
+
+The intelligence layer — the software that turns raw sensor data into actionable biomechanical insight — is the through-line across all four steps. That's what SprintLab is building. The hardware scales up; the intelligence transfers.
