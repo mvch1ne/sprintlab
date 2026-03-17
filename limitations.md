@@ -61,6 +61,20 @@ This is a metrics engine rewrite, not a model or backend change. The inference i
 
 This is a significant engineering effort that depends on Phase 1 being complete (the 3D keypoints must be fully integrated and temporally filtered before they can drive a character). It is integration work, not fundamental research — the individual components exist.
 
+**Potential accelerator — MyoLab / MyoKinesis:** The CEO of MyoLab (myolab.ai) reached out directly with an offer of free credits to evaluate their MyoKinesis SDK. MyoKinesis is a motion reconstruction system claiming 29% higher fidelity and 13× faster performance than existing methods, built on top of physiologically grounded musculoskeletal models (MuJoCo-based, from a team that includes Emo Todorov). If their SDK works as described, it could replace the custom IK → SMPL-X pipeline outlined above and additionally provide the musculoskeletal layer (muscle activations, joint torques) that would otherwise require a separate OpenSim integration.
+
+Blog post: https://myolab.ai/blog/myokinesis
+Open-source model repo: https://github.com/myolab/myo_model
+SDK access: https://github.com/myolab/myo_api
+
+Before integrating, evaluate:
+
+1. **Input format** — can it accept Wholebody3d 3D keypoints directly, or does it require raw video (which would mean redundant inference)?
+2. **Output format** — does it return joint rotations, muscle activations, joint torques, or something proprietary? Can the output feed back into SprintLab's metrics engine?
+3. **Sprint-specific fidelity** — their benchmarks are general motion. Sprint mechanics involve extreme joint velocities and very short ground contacts. Request validation data for high-speed athletic movements.
+4. **Latency and cost** — batch or real-time? Per-video pricing at scale matters for the target user base.
+5. **Licensing** — the open-source models are licensed for non-commercial research only. Commercial use likely requires a separate agreement. Clarify what the free credits cover and what happens after.
+
 ---
 
 ## Missing Features & Metrics
