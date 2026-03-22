@@ -16,9 +16,33 @@
 - Phase 6: Split-View Comparison — Side-by-side or overlay dual-video mode with synced playback and telemetry diff for athlete comparison
 - Phase 7: Detachable Panels — Electron-only pop-out windows for telemetry/timeline on secondary monitors
 
-###
+### Metrics & Accuracy Improvements
 
-- Review limitations-improvement-paths.md and get work on fixing what's fixable
+Based on limitations-improvement-paths.md — focusing on what's fixable now with existing data.
+
+#### Signal Processing (sprintMath.ts — no UI/backend changes)
+
+- Phase A: Kalman Filter — Replace forward-fill null handling with per-keypoint Kalman filter using confidence scores as observation noise. Eliminates freeze-snap artifacts during occlusion. Improves every downstream metric.
+- Phase B: Savitzky-Golay Smoothing — Replace double box filter (w=3) with Savitzky-Golay polynomial filter. Make window width fps-adaptive. Preserves peak angular velocities/accelerations that the current triangular kernel attenuates.
+- Phase C: Sub-Frame Contact Detection — Fit cubic spline to foot y-trajectory around threshold crossings and solve analytically. Improves contact timing from ~33ms quantization (at 30fps) to ~5–10ms effective resolution.
+
+#### CoM & Spatial Accuracy
+
+- Phase D: Segmental CoM Model — Replace hip-midpoint CoM with mass-weighted segmental model (Dempster/de Levi tables). Pure function on existing keypoint data. Fixes CoM drift during asymmetric limb positions.
+- Phase E: Two-Line Perspective Calibration — Add optional second reference line for ground-plane homography. Corrects perspective foreshortening for non-ideal camera angles. Moderate UX change (extra calibration step).
+
+#### New Metrics (computable from existing data)
+
+- Phase F: Core Spatiotemporal Metrics — Stride length, duty factor, contact length & flight distance, per-step acceleration curve, hip separation (scissor) angle, front-side/back-side mechanics ratio, thigh angular velocity at touchdown, arm action ROM.
+- Phase G: Proxy Metrics (require body mass input) — Vertical stiffness, braking/propulsion balance, RSI_sprint, horizontal force-velocity profile (acceleration clips only), bilateral asymmetry indices. Label clearly as estimates.
+- Phase H: Automated S-MAS Scoring — Map 12 S-MAS items to kinematic thresholds at gait events. Per-stride, per-side scoring with item-level breakdown. Needs threshold calibration against manual scoring.
+- Phase I: Kinogram Generation — Composite image of skeleton at evenly-spaced stride intervals or key gait events. Automatic and event-locked modes. Export as standalone image.
+
+#### Full Keypoint Utilisation
+
+- Phase J: 3D Keypoints — Switch metrics engine from 2D to 3D coordinates (already in wire format but discarded). Apply Kalman filter in 3D space. Enables approximate pelvic rotation, arm swing depth, step width.
+- Phase K: Detailed Foot Model — Replace 2-point heel/toe with multi-point foot surface from Wholebody3d. Distinguish forefoot/midfoot/rearfoot contact patterns.
+- Phase L: Head Stability — Use face/head keypoints for head stability analysis during sprinting.
 
 ## Future Work
 
