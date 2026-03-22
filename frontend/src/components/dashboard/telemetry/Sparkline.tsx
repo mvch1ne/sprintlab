@@ -21,14 +21,15 @@ export function Sparkline({
   /** Decimal places for the tooltip value. */
   precision?: number;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const [hover, setHover] = useState<{ pct: number; value: number } | null>(null);
+  const [hover, setHover] = useState<{ xPx: number; pct: number; value: number } | null>(null);
 
   const indexFromEvent = useCallback(
-    (e: React.MouseEvent<SVGSVGElement>) => {
-      const svg = svgRef.current;
-      if (!svg || data.length < 2) return null;
-      const rect = svg.getBoundingClientRect();
+    (e: React.MouseEvent) => {
+      const container = containerRef.current;
+      if (!container || data.length < 2) return null;
+      const rect = container.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width;
       const idx = Math.round(x * (data.length - 1));
       return Math.max(0, Math.min(data.length - 1, idx));
@@ -37,16 +38,23 @@ export function Sparkline({
   );
 
   const onPointerMove = useCallback(
-    (e: React.MouseEvent<SVGSVGElement>) => {
+    (e: React.MouseEvent) => {
+      const container = containerRef.current;
+      if (!container) return;
       const idx = indexFromEvent(e);
       if (idx === null) return;
-      setHover({ pct: (idx / (data.length - 1)) * 100, value: data[idx] });
+      const rect = container.getBoundingClientRect();
+      setHover({
+        xPx: e.clientX - rect.left,
+        pct: (idx / (data.length - 1)) * 100,
+        value: data[idx],
+      });
     },
     [data, indexFromEvent],
   );
 
   const onClick = useCallback(
-    (e: React.MouseEvent<SVGSVGElement>) => {
+    (e: React.MouseEvent) => {
       if (!onSeek) return;
       const idx = indexFromEvent(e);
       if (idx !== null) onSeek(idx);
@@ -68,81 +76,84 @@ export function Sparkline({
     .join(' ');
 
   return (
-    <svg
-      ref={svgRef}
-      viewBox={`0 0 ${W} ${H}`}
-      className={`w-full overflow-visible ${onSeek ? 'cursor-crosshair' : ''}`}
+    <div
+      ref={containerRef}
+      className={`relative w-full ${onSeek ? 'cursor-crosshair' : 'cursor-default'}`}
       style={{ height }}
-      preserveAspectRatio="none"
       onPointerMove={onPointerMove}
       onPointerLeave={() => setHover(null)}
       onClick={onClick}
     >
-      <polyline
-        points={pts}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.2"
-        vectorEffect="non-scaling-stroke"
-      />
-
-      {/* Playhead */}
-      {playheadPct != null && (
-        <line
-          x1={playheadPct}
-          y1={0}
-          x2={playheadPct}
-          y2={H}
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full overflow-visible absolute inset-0"
+        style={{ height }}
+        preserveAspectRatio="none"
+      >
+        <polyline
+          points={pts}
+          fill="none"
           stroke={color}
-          strokeWidth="0.8"
-          opacity="0.7"
+          strokeWidth="1.2"
           vectorEffect="non-scaling-stroke"
         />
-      )}
 
-      {/* Hover crosshair + tooltip */}
-      {hover && (
-        <>
+        {/* Playhead */}
+        {playheadPct != null && (
           <line
-            x1={hover.pct}
+            x1={playheadPct}
             y1={0}
-            x2={hover.pct}
+            x2={playheadPct}
             y2={H}
-            stroke="#a1a1aa"
-            strokeWidth="0.6"
-            strokeDasharray="2 1"
+            stroke={color}
+            strokeWidth="0.8"
+            opacity="0.7"
             vectorEffect="non-scaling-stroke"
           />
-          <circle
-            cx={hover.pct}
-            cy={H - ((hover.value - min) / range) * H}
-            r="2"
-            fill={color}
-            vectorEffect="non-scaling-stroke"
-          />
-          {/* Value tooltip - rendered as SVG text for simplicity */}
-          <rect
-            x={hover.pct > 70 ? hover.pct - 22 : hover.pct + 2}
-            y={1}
-            width="20"
-            height="7"
-            rx="1"
-            fill="rgba(0,0,0,0.75)"
-            vectorEffect="non-scaling-stroke"
-          />
-          <text
-            x={hover.pct > 70 ? hover.pct - 12 : hover.pct + 12}
-            y={6}
-            textAnchor="middle"
-            fill="white"
-            fontSize="4.5"
-            fontFamily="monospace"
-            vectorEffect="non-scaling-stroke"
-          >
+        )}
+
+        {/* Hover crosshair line + dot (these scale fine since they use vectorEffect) */}
+        {hover && (
+          <>
+            <line
+              x1={hover.pct}
+              y1={0}
+              x2={hover.pct}
+              y2={H}
+              stroke="#a1a1aa"
+              strokeWidth="0.6"
+              strokeDasharray="2 1"
+              vectorEffect="non-scaling-stroke"
+            />
+            <circle
+              cx={hover.pct}
+              cy={H - ((hover.value - min) / range) * H}
+              r="2"
+              fill={color}
+              vectorEffect="non-scaling-stroke"
+            />
+          </>
+        )}
+      </svg>
+
+      {/* HTML tooltip — not affected by SVG stretching */}
+      {hover && (
+        <div
+          className="absolute pointer-events-none z-10"
+          style={{
+            left: hover.xPx,
+            top: 0,
+            transform: hover.xPx > (containerRef.current?.getBoundingClientRect().width ?? 200) * 0.7
+              ? 'translate(-110%, 0)'
+              : 'translate(10%, 0)',
+          }}
+        >
+          <div className="bg-zinc-900/90 text-white text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded-sm whitespace-nowrap leading-tight">
             {hover.value.toFixed(precision)}{unit ?? ''}
-          </text>
-        </>
+          </div>
+        </div>
       )}
-    </svg>
+    </div>
   );
 }

@@ -49,13 +49,27 @@ const UIContext = createContext<UIContextValue | null>(null);
 export const UIProvider = ({ children }: { children: ReactNode }) => {
   const [stage, setStage] = useState<Stage>('import');
   const [hasVideo, setHasVideo] = useState(false);
-  const [completion, setCompletion] = useState<StageCompletion>({
+  const [completion, _setCompletion] = useState<StageCompletion>({
     import: false,
     calibrate: false,
     analyse: false,
     measure: false,
     report: false,
   });
+
+  // Shallow-compare before setting to avoid infinite re-render loops.
+  const setCompletion = useCallback((next: StageCompletion) => {
+    _setCompletion((prev) => {
+      if (
+        prev.import === next.import &&
+        prev.calibrate === next.calibrate &&
+        prev.analyse === next.analyse &&
+        prev.measure === next.measure &&
+        prev.report === next.report
+      ) return prev;
+      return next;
+    });
+  }, []);
 
   const value = useMemo<UIContextValue>(
     () => ({
@@ -66,7 +80,7 @@ export const UIProvider = ({ children }: { children: ReactNode }) => {
       hasVideo,
       setHasVideo,
     }),
-    [stage, completion, hasVideo],
+    [stage, completion, hasVideo, setCompletion],
   );
 
   return <UIContext.Provider value={value}>{children}</UIContext.Provider>;

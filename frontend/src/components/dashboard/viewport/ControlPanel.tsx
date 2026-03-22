@@ -136,8 +136,8 @@ export function ControlPanel({
             disabled={disabled}
           />
 
-          {/* Sprint start row */}
-          <div className={dim(['measure'])}>
+          {/* Sprint start / first-movement proposal */}
+          <div className={dim(['calibrate', 'measure'])}>
             <SprintStartRow
               startFrame={startFrame}
               proposedStartFrame={proposedStartFrame}
@@ -161,7 +161,7 @@ export function ControlPanel({
               value={totalFrames > 1 ? frameToTimecode(totalFrames - 1) : '\u2014'}
             />
             <Readout label="FPS" value={fpsDisplay} />
-            <Readout label="\u2206/frame" value={deltaDisplay} />
+            <Readout label="Δ/frame" value={deltaDisplay} />
           </div>
 
           <div className="mx-4 border-t border-zinc-400 dark:border-zinc-600/60" />
@@ -214,8 +214,8 @@ export function ControlPanel({
 
             <Separator />
 
-            {/* Report group */}
-            <div className={`flex items-center gap-2 transition-opacity ${dim(['report', 'import'])}`}>
+            {/* Trim & crop — available in calibrate + report */}
+            <div className={`flex items-center gap-2 transition-opacity ${dim(['calibrate', 'report', 'import'])}`}>
               <IconBtn
                 onClick={onToggleTrimCropPanel}
                 tooltip={showTrimCropPanel ? 'Hide trim & crop' : 'Trim & crop'}

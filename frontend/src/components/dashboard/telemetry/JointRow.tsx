@@ -1,4 +1,5 @@
 // ── Joint row ──────────────────────────────────────────────────────────────────
+import { useCallback } from 'react';
 import { Sparkline } from './Sparkline';
 import type { JointTimeSeries } from '../useSprintMetrics';
 
@@ -7,17 +8,29 @@ export function JointRow({
   series,
   frame,
   color,
+  onSeekToFrame,
 }: {
   label: string;
   series: JointTimeSeries;
   frame: number;
   color: string;
+  /** Optional — when provided, clicking the sparkline seeks the video. */
+  onSeekToFrame?: (frame: number) => void;
 }) {
   const n = series.angle.length;
   const f = Math.min(frame, n - 1);
   const step = Math.max(1, Math.floor(n / 100));
   const spark = series.angle.filter((_, i) => i % step === 0);
   const pct = n > 1 ? (f / (n - 1)) * 100 : 0;
+
+  // Map downsampled sparkline index back to original frame index
+  const handleSeek = useCallback(
+    (sparkIndex: number) => {
+      if (!onSeekToFrame) return;
+      onSeekToFrame(sparkIndex * step);
+    },
+    [onSeekToFrame, step],
+  );
 
   return (
     <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800/60">
@@ -38,7 +51,14 @@ export function JointRow({
           </span>
         </div>
       </div>
-      <Sparkline data={spark} color={color} height={18} playheadPct={pct} unit="°" />
+      <Sparkline
+        data={spark}
+        color={color}
+        height={18}
+        playheadPct={pct}
+        unit="°"
+        onSeek={onSeekToFrame ? handleSeek : undefined}
+      />
     </div>
   );
 }

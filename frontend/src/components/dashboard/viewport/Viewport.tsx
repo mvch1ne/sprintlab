@@ -153,6 +153,7 @@ export const Viewport = () => {
     setTotalFrames: ctxSetTotal,
     setCalibration: ctxSetCal,
     setMetrics: ctxSetMetrics,
+    setSeekToFrame: ctxSetSeekToFrame,
     setDeleteContact: ctxSetDeleteContact,
     setEditContact: ctxSetEditContact,
     setComEvents: ctxSetComEvents,
@@ -336,6 +337,16 @@ export const Viewport = () => {
     (frame: number) => video.seekToFrame(frame, totalFrames),
     [video, totalFrames],
   );
+
+  // Publish seekToFrame via a ref-stable wrapper to avoid re-render loops.
+  // (handleSeekToFrame changes every render because `video` is a new object.)
+  const seekRef = useRef(handleSeekToFrame);
+  seekRef.current = handleSeekToFrame;
+  useEffect(() => {
+    const stableSeek = (frame: number) => seekRef.current(frame);
+    ctxSetSeekToFrame(stableSeek);
+    return () => ctxSetSeekToFrame(null);
+  }, [ctxSetSeekToFrame]);
 
   const stopWheel = useCallback((el: HTMLDivElement | null) => {
     if (!el) return;
