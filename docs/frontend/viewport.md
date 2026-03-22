@@ -42,7 +42,7 @@ The control panel is a thin layout component that composes sub-components from `
 | `CalibrationControls` | Calibrate, measure distance/angle, panel toggle |
 | `PoseControls` | Pose toggle, backend reachability, settings panel |
 | `SprintControls` | Start frame flag, confirm/clear, CoM controls |
-| `Scrubber` | Timeline bar with playhead, tick marks, markers |
+| `Timeline` | Multi-lane zoomable timeline (frame ruler, ground contacts, events, speed sparkline) |
 | `shared` | `IconBtn`, `Readout`, `Separator` reusable primitives |
 
 ## View Modes

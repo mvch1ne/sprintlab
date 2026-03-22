@@ -1,5 +1,5 @@
 // ── CoM tab ────────────────────────────────────────────────────────────────────
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Sparkline } from './Sparkline';
 import { SectionHead } from './SectionHead';
 import type { CoMSeries } from '../useSprintMetrics';
@@ -19,6 +19,7 @@ export function CoMTab({
   reactionTimeEnabled,
   setReactionTime,
   setReactionTimeEnabled,
+  onSeekToFrame,
 }: {
   comSeries: CoMSeries;
   com: { frame: number; x: number; y: number }[];
@@ -34,6 +35,7 @@ export function CoMTab({
   reactionTimeEnabled: boolean;
   setReactionTime: (t: number) => void;
   setReactionTimeEnabled: (v: boolean) => void;
+  onSeekToFrame?: (frame: number) => void;
 }) {
   const n = comSeries.x.length;
   const f = Math.min(frame, n - 1);
@@ -41,6 +43,13 @@ export function CoMTab({
   const spark = (arr: number[]) => arr.filter((_, i) => i % step === 0);
   const pct = n > 1 ? (f / (n - 1)) * 100 : 0;
   const color = '#a78bfa';
+
+  // Map downsampled sparkline index back to original frame index
+  const handleSparkSeek = useCallback(
+    (sparkIndex: number) => { onSeekToFrame?.(sparkIndex * step); },
+    [onSeekToFrame, step],
+  );
+  const seekProp = onSeekToFrame ? handleSparkSeek : undefined;
 
   // Manual overrides for crossing frames (null = use auto-detected value).
   const [staticCrossingOverride, setStaticCrossingOverride] = useState<
@@ -111,6 +120,9 @@ export function CoMTab({
           color={color}
           height={18}
           playheadPct={pct}
+          unit=" m"
+          precision={2}
+          onSeek={seekProp}
         />
       </div>
 
@@ -129,6 +141,9 @@ export function CoMTab({
           color={color}
           height={22}
           playheadPct={pct}
+          unit=" m/s"
+          precision={2}
+          onSeek={seekProp}
         />
       </div>
 
@@ -145,6 +160,9 @@ export function CoMTab({
           color={color}
           height={18}
           playheadPct={pct}
+          unit=" m/s²"
+          precision={2}
+          onSeek={seekProp}
         />
       </div>
 
@@ -563,6 +581,9 @@ export function CoMTab({
                   color="#f97316"
                   height={30}
                   playheadPct={headPct}
+                  onSeek={seekProp ? (i) => seekProp(i + zf0) : undefined}
+                  unit=" m/s"
+                  precision={2}
                 />
               </div>
             </>

@@ -25,13 +25,13 @@ export function IconBtn({
           disabled={disabled}
           className={`
             flex items-center justify-center w-7 h-7 rounded-sm
-            border transition-all duration-100 select-none
+            border transition-all duration-150 select-none
             ${
               disabled
                 ? 'opacity-25 cursor-not-allowed border-transparent'
                 : active
-                  ? 'bg-sky-600/20 border-sky-500/60 text-sky-500 cursor-pointer'
-                  : 'border-zinc-400 text-zinc-700 dark:text-zinc-300 hover:border-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-950 dark:hover:border-zinc-500 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 cursor-pointer'
+                  ? 'bg-sky-600/20 border-sky-500/60 text-sky-500 cursor-pointer active:scale-90'
+                  : 'border-zinc-400 text-zinc-700 dark:text-zinc-300 hover:border-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-950 dark:hover:border-zinc-500 dark:hover:text-zinc-200 dark:hover:bg-zinc-800 cursor-pointer active:scale-90'
             }
           `}
         >

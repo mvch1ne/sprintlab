@@ -37,7 +37,7 @@ export function PoseControls({
           active={poseEnabled}
         >
           {poseStatus === 'loading' ? (
-            <span className="text-[10px] animate-pulse">\u2026</span>
+            <span className="text-[10px] animate-pulse">…</span>
           ) : (
             <ScanLine size={14} />
           )}

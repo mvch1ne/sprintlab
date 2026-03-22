@@ -38,6 +38,7 @@ export const Telemetry = () => {
     reactionTimeEnabled,
     setReactionTime,
     setReactionTimeEnabled,
+    seekToFrame,
   } = useVideoContext();
   const { status } = usePose();
   const [tab, setTab] = useState<Tab>('steps');
@@ -75,6 +76,7 @@ export const Telemetry = () => {
 
   const cal = calibration !== null;
   const f = currentFrame;
+  const seek = seekToFrame ?? undefined;
 
   // Left = green, Right = amber — consistent throughout
   const LC = '#4ade80',
@@ -129,6 +131,7 @@ export const Telemetry = () => {
             reactionTimeEnabled={reactionTimeEnabled}
             setReactionTime={setReactionTime}
             setReactionTimeEnabled={setReactionTimeEnabled}
+            onSeekToFrame={seek}
           />
         )}
 
@@ -141,12 +144,14 @@ export const Telemetry = () => {
               series={metrics.leftHip}
               frame={f}
               color={LC}
+              onSeekToFrame={seek}
             />
             <JointRow
               label="Right hip"
               series={metrics.rightHip}
               frame={f}
               color={RC}
+              onSeekToFrame={seek}
             />
 
             <SectionHead label="Knee (interior)" color={LC} />
@@ -155,12 +160,14 @@ export const Telemetry = () => {
               series={metrics.leftKnee}
               frame={f}
               color={LC}
+              onSeekToFrame={seek}
             />
             <JointRow
               label="Right knee"
               series={metrics.rightKnee}
               frame={f}
               color={RC}
+              onSeekToFrame={seek}
             />
 
             <SectionHead label="Ankle (interior)" color={LC} />
@@ -169,12 +176,14 @@ export const Telemetry = () => {
               series={metrics.leftAnkle}
               frame={f}
               color={LC}
+              onSeekToFrame={seek}
             />
             <JointRow
               label="Right ankle"
               series={metrics.rightAnkle}
               frame={f}
               color={RC}
+              onSeekToFrame={seek}
             />
 
             <SectionHead label="Segment angles" color={LC} />
@@ -183,24 +192,28 @@ export const Telemetry = () => {
               series={metrics.leftThigh}
               frame={f}
               color={LC}
+              onSeekToFrame={seek}
             />
             <JointRow
               label="Right thigh (from vertical)"
               series={metrics.rightThigh}
               frame={f}
               color={RC}
+              onSeekToFrame={seek}
             />
             <JointRow
               label="Left shin (90°=vertical)"
               series={metrics.leftShin}
               frame={f}
               color={LC}
+              onSeekToFrame={seek}
             />
             <JointRow
               label="Right shin (90°=vertical)"
               series={metrics.rightShin}
               frame={f}
               color={RC}
+              onSeekToFrame={seek}
             />
           </>
         )}
@@ -214,12 +227,14 @@ export const Telemetry = () => {
               series={metrics.leftShoulder}
               frame={f}
               color={LC}
+              onSeekToFrame={seek}
             />
             <JointRow
               label="Right shoulder"
               series={metrics.rightShoulder}
               frame={f}
               color={RC}
+              onSeekToFrame={seek}
             />
 
             <SectionHead label="Elbow (interior)" color="#38bdf8" />
@@ -228,12 +243,14 @@ export const Telemetry = () => {
               series={metrics.leftElbow}
               frame={f}
               color={LC}
+              onSeekToFrame={seek}
             />
             <JointRow
               label="Right elbow"
               series={metrics.rightElbow}
               frame={f}
               color={RC}
+              onSeekToFrame={seek}
             />
 
             <SectionHead label="Wrist (interior)" color="#38bdf8" />
@@ -242,12 +259,14 @@ export const Telemetry = () => {
               series={metrics.leftWrist}
               frame={f}
               color={LC}
+              onSeekToFrame={seek}
             />
             <JointRow
               label="Right wrist"
               series={metrics.rightWrist}
               frame={f}
               color={RC}
+              onSeekToFrame={seek}
             />
 
             <SectionHead label="Trunk" color="#fb923c" />
@@ -256,6 +275,7 @@ export const Telemetry = () => {
               series={metrics.torso}
               frame={f}
               color="#fb923c"
+              onSeekToFrame={seek}
             />
           </>
         )}

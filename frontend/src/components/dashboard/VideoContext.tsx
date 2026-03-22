@@ -28,6 +28,8 @@ interface VideoContextValue {
   totalFrames: number;
   calibration: CalibrationData | null;
   metrics: SprintMetrics | null;
+  /** Seek the video to a specific frame (published by Viewport). */
+  seekToFrame: ((frame: number) => void) | null;
   deleteContact: ((id: string) => void) | null;
   editContact: ((id: string, contactFrame: number, liftFrame: number) => void) | null;
   comEvents: CoMEvent[];
@@ -64,6 +66,7 @@ interface VideoContextValue {
   setTotalFrames: (n: number) => void;
   setCalibration: (c: CalibrationData | null) => void;
   setMetrics: (m: SprintMetrics | null) => void;
+  setSeekToFrame: (fn: ((frame: number) => void) | null) => void;
   setDeleteContact: (fn: ((id: string) => void) | null) => void;
   setEditContact: (fn: ((id: string, contactFrame: number, liftFrame: number) => void) | null) => void;
   setComEvents: (events: CoMEvent[]) => void;
@@ -80,6 +83,7 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
   const [totalFrames, setTotalFrames] = useState(0);
   const [calibration, setCalibration] = useState<CalibrationData | null>(null);
   const [metrics, setMetrics] = useState<SprintMetrics | null>(null);
+  const [seekToFrame, _setSeekToFrame] = useState<((frame: number) => void) | null>(null);
   const [deleteContact, _setDeleteContact] = useState<((id: string) => void) | null>(null);
   const [editContact, _setEditContact] = useState<((id: string, contactFrame: number, liftFrame: number) => void) | null>(null);
   const [comEvents, setComEvents] = useState<CoMEvent[]>([]);
@@ -96,6 +100,9 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
   const [reactionTimeEnabled, setReactionTimeEnabled] = useState(true);
 
   // Wrap in () => fn to prevent React treating stored functions as updaters
+  const setSeekToFrame = useCallback((fn: ((frame: number) => void) | null) => {
+    _setSeekToFrame(() => fn);
+  }, []);
   const setDeleteContact = useCallback((fn: ((id: string) => void) | null) => {
     _setDeleteContact(() => fn);
   }, []);
@@ -111,6 +118,7 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
         totalFrames,
         calibration,
         metrics,
+        seekToFrame,
         deleteContact,
         editContact,
         comEvents,
@@ -134,6 +142,7 @@ export const VideoProvider = ({ children }: { children: ReactNode }) => {
         setTotalFrames: useCallback((n) => setTotalFrames(n), []),
         setCalibration: useCallback((c) => setCalibration(c), []),
         setMetrics: useCallback((m) => setMetrics(m), []),
+        setSeekToFrame,
         setDeleteContact,
         setEditContact,
         setComEvents: useCallback((events) => setComEvents(events), []),

@@ -45,7 +45,7 @@ export const StatusBar = () => {
       className="
       h-5 shrink-0 w-full
       border-t border-zinc-300 dark:border-zinc-700
-      bg-white dark:bg-zinc-950
+      bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm
       flex items-center
       px-3 gap-0
       font-mono text-[11px] tracking-wider

@@ -39,7 +39,8 @@ frontend/src/
 │   │   │   │   ├── CalibrationControls.tsx
 │   │   │   │   ├── PoseControls.tsx
 │   │   │   │   ├── SprintControls.tsx
-│   │   │   │   ├── Scrubber.tsx
+│   │   │   │   ├── Timeline.tsx
+│   │   │   │   ├── Scrubber.tsx       # Legacy (replaced by Timeline)
 │   │   │   │   └── shared.tsx
 │   │   │   ├── StageBar.tsx            # Workflow stage tabs with completion dots
 │   │   │   ├── Viewport.tsx           # Orchestrator — composes hooks + overlays
@@ -79,7 +80,7 @@ App
     │       ├── CalibrationControls
     │       ├── PoseControls
     │       ├── SprintControls
-    │       └── Scrubber
+    │       └── Timeline          ← multi-lane zoomable timeline
     └── Telemetry                 ← left panel: tab shell composing sub-components
         ├── ContactsTab
         ├── JointRow + Sparkline

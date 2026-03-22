@@ -14,9 +14,9 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-const TELEMETRY_MIN = 260; // px
+const TELEMETRY_MIN = 350; // px
 const TELEMETRY_MAX = 480; // px
-const TELEMETRY_DEFAULT = 260; // px
+const TELEMETRY_DEFAULT = 350; // px
 const COLLAPSED_WIDTH = 20; // px — slim strip
 
 export const Dashboard = () => {
@@ -87,7 +87,7 @@ export const Dashboard = () => {
                   {telemetryOpen ? (
                     <>
                       {/* Header */}
-                      <div className="h-5 shrink-0 border border-t-0 border-zinc-400 dark:border-zinc-600 bg-white dark:bg-zinc-950 flex items-center px-3 gap-2">
+                      <div className="h-5 shrink-0 border border-t-0 border-zinc-400 dark:border-zinc-600 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm flex items-center px-3 gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-sky-500" />
                         <span className="text-[11px] uppercase tracking-[0.2em] text-zinc-700 dark:text-zinc-300 font-sans whitespace-nowrap">
                           Telemetry

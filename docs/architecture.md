@@ -93,6 +93,19 @@ The Viewport renders multiple canvas overlays stacked on top of the video elemen
 
 The Telemetry panel is a thin tab shell that reads from `VideoContext` and delegates rendering to sub-components (`ContactsTab`, `CoMTab`, `JointRow`, `Sparkline`). A playhead drawn inside each sparkline tracks the current video frame.
 
+### Timeline
+
+The `Timeline` component replaces the simple scrubber bar with a multi-lane, zoomable timeline. It reads ground contacts, CoM events, speed data, and sprint markers directly from `VideoContext`. Four lanes are stacked vertically:
+
+| Lane | Content |
+| ---- | ------- |
+| **Frame ruler** | Adaptive tick marks + frame numbers (interval adjusts to zoom level) |
+| **Contacts (GC)** | Coloured blocks — green for left foot, orange for right foot |
+| **Events (EV)** | Violet dots for CoM events, sky/red triangles for sprint start/finish |
+| **Speed (SPD)** | SVG polyline of horizontal CoM speed |
+
+A vertical playhead spans all lanes. When zoomed in, a minimap bar below the timeline shows the visible region within the full clip. The control section auto-sizes to its content rather than using a fixed height.
+
 ## Stage-Based Workflow
 
 The UI is organised around five sequential stages. A `StageBar` at the top of the control section shows progress:
@@ -137,6 +150,34 @@ A minimal context for pose processing status: `idle | loading | ready | error`. 
 ### Why three contexts?
 
 `VideoContext` is large — it covers video state, calibration, and metrics all in one place to avoid deeply nested prop drilling. `PoseContext` is kept separate because its state is only relevant to a small number of components and changes at a different lifecycle (only during inference). `UIContext` owns presentation-layer state (stage navigation, completion indicators) that multiple components need but that doesn't belong in the data-oriented `VideoContext`.
+
+## Visual System
+
+### Typography
+
+Two-font system: **Figtree Variable** (`font-sans`) for UI text (labels, headers, buttons) and **TheSansMonoSCd** (`font-mono`) for data (readouts, timecodes, tables, sparkline tooltips). The base font is Figtree; data-heavy elements opt in to mono via Tailwind's `font-mono` class.
+
+### Stage Accent Colors
+
+Each workflow stage has a unique accent color used in the StageBar tab, active badge, and indicator bar:
+
+| Stage     | Color   |
+| --------- | ------- |
+| Import    | Sky     |
+| Calibrate | Amber   |
+| Analyse   | Violet  |
+| Measure   | Emerald |
+| Report    | Orange  |
+
+Accent tokens are exported from `UIContext` as `STAGE_ACCENT` for use across components.
+
+### Depth & Glassmorphism
+
+Panels use `bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm` for a frosted-glass effect. The control section casts an upward shadow (`shadow-[0_-2px_8px_...]`) to separate it from the viewport. Overlay side panels (PosePanel, MeasurementPanel, TrimCropPanel) use `backdrop-blur-sm` with 95% opacity backgrounds.
+
+### Micro-interactions
+
+All icon buttons and stage tabs use `active:scale-90` (or `active:scale-95` for stage tabs) for tactile press feedback. Transitions use `duration-150` for responsiveness.
 
 ## Design Decisions
 

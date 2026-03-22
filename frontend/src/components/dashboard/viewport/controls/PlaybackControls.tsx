@@ -121,7 +121,7 @@ export function PlaybackControls({
                 setIsPlaying(true);
               } else setIsPlaying((p) => !p);
             }}
-            className={`flex items-center justify-center w-9 h-9 rounded-sm border transition-all duration-150 cursor-pointer
+            className={`flex items-center justify-center w-9 h-9 rounded-sm border transition-all duration-150 cursor-pointer active:scale-90
               ${
                 isPlaying
                   ? 'bg-sky-500 border-sky-400 text-white shadow-[0_0_12px_rgba(14,165,233,0.4)] dark:bg-sky-600 dark:border-sky-500'

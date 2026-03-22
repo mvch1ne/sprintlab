@@ -1,7 +1,7 @@
 // Horizontal workflow stage tabs with completion indicators.
 // Sits at the top of the ControlPanel area.
 import { Upload, Ruler, ScanLine, Crosshair, FileBarChart, Check } from 'lucide-react';
-import { STAGES, useUI } from '../UIContext';
+import { STAGES, STAGE_ACCENT, useUI } from '../UIContext';
 import type { Stage } from '../UIContext';
 
 const STAGE_META: Record<Stage, { label: string; icon: React.ReactNode }> = {
@@ -12,16 +12,25 @@ const STAGE_META: Record<Stage, { label: string; icon: React.ReactNode }> = {
   report:    { label: 'Report',    icon: <FileBarChart size={12} /> },
 };
 
+/** Active-tab badge bg + text per stage (uses the stage accent at 20% opacity). */
+const ACTIVE_BADGE: Record<Stage, string> = {
+  import:    'bg-sky-500/20 text-sky-500',
+  calibrate: 'bg-amber-500/20 text-amber-500',
+  analyse:   'bg-violet-500/20 text-violet-500',
+  measure:   'bg-emerald-500/20 text-emerald-500',
+  report:    'bg-orange-500/20 text-orange-500',
+};
+
 export function StageBar() {
   const { stage, setStage, completion, hasVideo } = useUI();
 
   return (
-    <div className="StageBar h-7 shrink-0 border border-b-0 border-zinc-400 dark:border-zinc-600 bg-white dark:bg-zinc-950 flex items-stretch">
+    <div className="StageBar h-7 shrink-0 border border-b-0 border-zinc-400 dark:border-zinc-600 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm flex items-stretch">
       {STAGES.map((s, i) => {
         const meta = STAGE_META[s];
+        const accent = STAGE_ACCENT[s];
         const active = s === stage;
         const done = completion[s];
-        // Import tab is always reachable. Others require a loaded video.
         const reachable = s === 'import' || hasVideo;
 
         return (
@@ -30,10 +39,11 @@ export function StageBar() {
             onClick={() => reachable && setStage(s)}
             disabled={!reachable}
             className={`
-              group relative flex items-center gap-1.5 px-3 text-[10px] uppercase tracking-[0.15em] font-sans transition-colors cursor-pointer
+              group relative flex items-center gap-1.5 px-3 text-[10px] uppercase tracking-[0.15em] font-sans
+              transition-all duration-150 cursor-pointer active:scale-95
               border-r border-zinc-300 dark:border-zinc-700 last:border-r-0
               ${active
-                ? 'bg-zinc-100 dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100'
+                ? `bg-zinc-100 dark:bg-zinc-900 ${accent.text}`
                 : reachable
                   ? 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-900/50'
                   : 'text-zinc-300 dark:text-zinc-600 cursor-not-allowed'
@@ -47,7 +57,7 @@ export function StageBar() {
                 ${done
                   ? 'bg-emerald-500/20 text-emerald-500 dark:bg-emerald-500/20 dark:text-emerald-400'
                   : active
-                    ? 'bg-sky-500/20 text-sky-500'
+                    ? ACTIVE_BADGE[s]
                     : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400'
                 }
               `}
@@ -61,9 +71,9 @@ export function StageBar() {
               {meta.label}
             </span>
 
-            {/* Active indicator bar */}
+            {/* Active indicator bar — uses stage accent color */}
             {active && (
-              <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-sky-500 rounded-t-full" />
+              <div className={`absolute bottom-0 left-2 right-2 h-0.5 ${accent.bg} rounded-t-full`} />
             )}
           </button>
         );
@@ -76,7 +86,7 @@ export function StageBar() {
           ['Space', 'play'],
         ].map(([key, label]) => (
           <div key={key} className="flex items-center gap-1">
-            <span className="text-[10px] px-1 py-0.5 bg-zinc-100 border border-zinc-400 dark:bg-zinc-950 dark:border-zinc-600 rounded-sm text-zinc-700 dark:text-zinc-300 leading-none">
+            <span className="text-[10px] px-1 py-0.5 bg-zinc-100 border border-zinc-400 dark:bg-zinc-950 dark:border-zinc-600 rounded-sm text-zinc-700 dark:text-zinc-300 leading-none font-mono">
               {key}
             </span>
             <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">

@@ -44,7 +44,7 @@ import { useCoM } from '../../../hooks/useCoM';
 import { useTrimCrop } from '../../../hooks/useTrimCrop';
 
 export const Viewport = () => {
-  const sectionHeights = { header: '1.25rem', controlSection: '13.75rem' };
+  const sectionHeights = { header: '1.25rem' };
   const exportingRef = useRef(false);
 
   // ── Pose ──────────────────────────────────────────────────────────────────
@@ -153,6 +153,7 @@ export const Viewport = () => {
     setTotalFrames: ctxSetTotal,
     setCalibration: ctxSetCal,
     setMetrics: ctxSetMetrics,
+    setSeekToFrame: ctxSetSeekToFrame,
     setDeleteContact: ctxSetDeleteContact,
     setEditContact: ctxSetEditContact,
     setComEvents: ctxSetComEvents,
@@ -337,6 +338,16 @@ export const Viewport = () => {
     [video, totalFrames],
   );
 
+  // Publish seekToFrame via a ref-stable wrapper to avoid re-render loops.
+  // (handleSeekToFrame changes every render because `video` is a new object.)
+  const seekRef = useRef(handleSeekToFrame);
+  seekRef.current = handleSeekToFrame;
+  useEffect(() => {
+    const stableSeek = (frame: number) => seekRef.current(frame);
+    ctxSetSeekToFrame(stableSeek);
+    return () => ctxSetSeekToFrame(null);
+  }, [ctxSetSeekToFrame]);
+
   const stopWheel = useCallback((el: HTMLDivElement | null) => {
     if (!el) return;
     el.addEventListener('wheel', (e) => e.stopPropagation(), { passive: false });
@@ -360,7 +371,7 @@ export const Viewport = () => {
 
   return (
     <div className="viewport-container flex flex-col h-full">
-      <header className="shrink-0 border border-t-0 border-zinc-400 dark:border-zinc-600 bg-white dark:bg-zinc-950">
+      <header className="shrink-0 border border-t-0 border-zinc-400 dark:border-zinc-600 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm">
         {/* Row 1 — video metadata */}
         <div className="flex items-center px-3 h-5 gap-3 border-b border-zinc-200 dark:border-zinc-800/60">
           <div className="flex items-center gap-2">
@@ -842,7 +853,7 @@ export const Viewport = () => {
               </div>
               <button
                 onClick={video.handleUploadClick}
-                className="mt-1 px-5 py-2.5 rounded-sm border border-zinc-500 text-sm uppercase tracking-widest text-white hover:border-sky-400 hover:text-sky-400 transition-all duration-150 cursor-pointer font-sans"
+                className="mt-1 px-5 py-2.5 rounded-sm border border-zinc-500 text-sm uppercase tracking-widest text-white hover:border-sky-400 hover:text-sky-400 active:scale-95 transition-all duration-150 cursor-pointer font-sans"
               >
                 Upload Video
               </button>
@@ -853,7 +864,7 @@ export const Viewport = () => {
 
       <input ref={video.fileInputRef} type="file" accept="video/*" className="hidden" onChange={video.handleFileChange} />
 
-      <div style={{ height: sectionHeights.controlSection }} className="shrink-0">
+      <div className="shrink-0 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_-2px_8px_rgba(0,0,0,0.3)]">
         <StageBar />
         <ControlPanel
           stage={stage}
