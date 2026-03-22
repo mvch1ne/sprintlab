@@ -4,7 +4,7 @@ import type { CalibrationData } from './CalibrationAndMeasurements/CalibrationOv
 import type { LandmarkerStatus } from './PoseEngine/usePoseLandmarker';
 import type { Stage } from '../UIContext';
 import { IconBtn, Readout, Separator } from './controls/shared';
-import { Scrubber } from './controls/Scrubber';
+import { Timeline } from './controls/Timeline';
 import { PlaybackControls } from './controls/PlaybackControls';
 import { CalibrationControls } from './controls/CalibrationControls';
 import { PoseControls } from './controls/PoseControls';
@@ -123,11 +123,11 @@ export function ControlPanel({
   return (
     <TooltipProvider delayDuration={400}>
       <div
-        className={`ControlPanelContainer h-full w-full flex flex-col bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm dark:text-zinc-200 transition-opacity ${disabled ? 'opacity-40 pointer-events-none' : ''}`}
+        className={`ControlPanelContainer w-full flex flex-col bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm dark:text-zinc-200 transition-opacity ${disabled ? 'opacity-40 pointer-events-none' : ''}`}
       >
-        <div className="MainControls flex-1 border border-zinc-400 dark:border-zinc-600 flex flex-col overflow-hidden">
-          {/* Scrubber */}
-          <Scrubber
+        <div className="MainControls border border-zinc-400 dark:border-zinc-600 flex flex-col">
+          {/* Multi-lane timeline */}
+          <Timeline
             currentFrame={currentFrame}
             totalFrames={totalFrames}
             startFrame={startFrame}
@@ -147,7 +147,7 @@ export function ControlPanel({
           </div>
 
           {/* Readouts */}
-          <div className="ReadoutsRow flex justify-between items-center px-4 pt-1 pb-0.5">
+          <div className="ReadoutsRow flex justify-between items-center px-4 py-0.5">
             <Readout
               label={startFrame !== null ? 'Rel. Frame' : 'Frame'}
               value={`${relativeFrame !== null ? relativeFrame : currentFrame} / ${totalFrames > 0 ? totalFrames - 1 : 0}`}
@@ -167,7 +167,7 @@ export function ControlPanel({
           <div className="mx-4 border-t border-zinc-400 dark:border-zinc-600/60" />
 
           {/* Transport — always visible (playback is stage-agnostic) */}
-          <div className="ControlInputSection flex flex-1 items-center px-4 gap-2 flex-wrap">
+          <div className="ControlInputSection flex items-center px-4 py-1 gap-2 flex-wrap">
             <PlaybackControls
               currentFrame={currentFrame}
               totalFrames={totalFrames}

@@ -44,7 +44,7 @@ import { useCoM } from '../../../hooks/useCoM';
 import { useTrimCrop } from '../../../hooks/useTrimCrop';
 
 export const Viewport = () => {
-  const sectionHeights = { header: '1.25rem', controlSection: '13.75rem' };
+  const sectionHeights = { header: '1.25rem' };
   const exportingRef = useRef(false);
 
   // ── Pose ──────────────────────────────────────────────────────────────────
@@ -864,7 +864,7 @@ export const Viewport = () => {
 
       <input ref={video.fileInputRef} type="file" accept="video/*" className="hidden" onChange={video.handleFileChange} />
 
-      <div style={{ height: sectionHeights.controlSection }} className="shrink-0 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_-2px_8px_rgba(0,0,0,0.3)]">
+      <div className="shrink-0 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_-2px_8px_rgba(0,0,0,0.3)]">
         <StageBar />
         <ControlPanel
           stage={stage}
