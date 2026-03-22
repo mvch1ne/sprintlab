@@ -11,7 +11,8 @@ The frontend is a React 19 single-page application written in TypeScript, built 
 | Styling | TailwindCSS 4 + Figtree variable font |
 | UI primitives | Radix UI + Shadcn/ui |
 | Video processing | FFmpeg.js (WebAssembly) |
-| State | React Context (`UIContext`, `VideoContext`, `PoseContext`) |
+| State | React Context (`UIContext`, `VideoContext`, `PoseContext`, `CommandContext`) |
+| Command palette | cmdk |
 | Testing | Vitest 3 + jsdom + @testing-library/react |
 
 ## Directory Structure
@@ -25,7 +26,8 @@ frontend/src/
 │   ├── useMeasurements.ts             # Distance & angle measurements
 │   ├── useSprintMarkers.ts            # Sprint markers, manual/merged contacts
 │   ├── useCoM.ts                      # Centre of Mass display & events
-│   └── useTrimCrop.ts                 # Trim & crop panel state
+│   ├── useTrimCrop.ts                 # Trim & crop panel state
+│   └── useKeyboardShortcuts.ts        # Global hotkeys (Ctrl+K, Space, arrows, etc.)
 ├── components/
 │   ├── dashboard/
 │   │   ├── viewport/
@@ -56,7 +58,9 @@ frontend/src/
 │   │   ├── sprintMath.ts              # Pure math (no React)
 │   │   ├── UIContext.tsx               # Stage workflow + UI state
 │   │   ├── VideoContext.tsx
-│   │   └── PoseContext.tsx
+│   │   ├── PoseContext.tsx
+│   │   ├── CommandContext.tsx          # Action registry for palette + shortcuts
+│   │   └── CommandPalette.tsx          # Ctrl+K searchable command palette (cmdk)
 │   ├── layout/                        # Header, Dashboard shell
 │   └── ui/                            # Shared Shadcn components
 ├── lib/                               # Utilities
@@ -67,7 +71,8 @@ frontend/src/
 
 ```
 App
-└── Dashboard                     ← wraps UIProvider → VideoProvider → PoseProvider
+├── Header                        ← logo, Ctrl+K badge, help, theme toggle
+└── Dashboard                     ← wraps UIProvider → VideoProvider → PoseProvider → CommandProvider
     ├── Viewport                  ← right panel: orchestrator composing 7 hooks
     │   ├── VideoLayer
     │   ├── PoseOverlay
@@ -81,10 +86,11 @@ App
     │       ├── PoseControls
     │       ├── SprintControls
     │       └── Timeline          ← multi-lane zoomable timeline
-    └── Telemetry                 ← left panel: tab shell composing sub-components
-        ├── ContactsTab
-        ├── JointRow + Sparkline
-        └── CoMTab
+    ├── Telemetry                 ← left panel: tab shell composing sub-components
+    │   ├── ContactsTab
+    │   ├── JointRow + Sparkline
+    │   └── CoMTab
+    └── CommandPalette            ← Ctrl+K searchable action palette
 ```
 
 Both `Viewport` and `Telemetry` read from and write to `VideoContext`. They do not pass props to each other directly.

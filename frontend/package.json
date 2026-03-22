@@ -23,6 +23,7 @@
     "@tailwindcss/vite": "^4.1.17",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
     "kalidokit": "^1.1.5",
     "lucide-react": "^0.576.0",
     "radix-ui": "^1.4.3",

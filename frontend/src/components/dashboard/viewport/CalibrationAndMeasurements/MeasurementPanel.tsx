@@ -205,7 +205,7 @@ export const MeasurementPanel = ({
         </div>
 
         {/* Lists */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto scrollbar-thin">
           {measurements.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-2 opacity-40">
               <Ruler size={14} className="text-zinc-500" />

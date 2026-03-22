@@ -21,6 +21,7 @@ import { useStatus } from './StatusBar/StatusContext';
 import { useVideoContext } from '../VideoContext';
 import { usePose } from '../PoseContext';
 import { useUI } from '../UIContext';
+import { useCommands } from '../CommandContext';
 import { useSprintMetrics } from '../useSprintMetrics';
 import {
   AlertDialog,
@@ -264,6 +265,58 @@ export const Viewport = () => {
     com.clearEvents();
     sprint.setAnnotateMode('off');
   }, [com, sprint]);
+
+  // ── Register actions into CommandContext ────────────────────────────────
+  const cmds = useCommands();
+
+  useEffect(() => {
+    const SPEED_OPTIONS = [0.0625, 0.125, 0.25, 0.5, 1, 1.5, 2, 4];
+    const unsubs = [
+      cmds.register('toggle-play', () => video.setPlaying((p: boolean) => !p)),
+      cmds.register('step-forward', () => {
+        video.setPlaying(false);
+        video.seekToFrame(Math.min(video.currentFrameRef.current + 1, totalFrames - 1), totalFrames);
+      }),
+      cmds.register('step-back', () => {
+        video.setPlaying(false);
+        video.seekToFrame(Math.max(video.currentFrameRef.current - 1, 0), totalFrames);
+      }),
+      cmds.register('jump-forward-10', () => {
+        video.setPlaying(false);
+        video.seekToFrame(Math.min(video.currentFrameRef.current + 10, totalFrames - 1), totalFrames);
+      }),
+      cmds.register('jump-back-10', () => {
+        video.setPlaying(false);
+        video.seekToFrame(Math.max(video.currentFrameRef.current - 10, 0), totalFrames);
+      }),
+      cmds.register('jump-start', () => video.seekToFrame(0, totalFrames)),
+      cmds.register('jump-end', () => video.seekToFrame(totalFrames - 1, totalFrames)),
+      cmds.register('speed-0.25', () => video.setPlaybackRate(0.25)),
+      cmds.register('speed-0.5', () => video.setPlaybackRate(0.5)),
+      cmds.register('speed-1', () => video.setPlaybackRate(1)),
+      cmds.register('speed-2', () => video.setPlaybackRate(2)),
+      cmds.register('speed-down', () => {
+        const idx = SPEED_OPTIONS.indexOf(video.playbackRate);
+        if (idx > 0) video.setPlaybackRate(SPEED_OPTIONS[idx - 1]);
+      }),
+      cmds.register('speed-up', () => {
+        const idx = SPEED_OPTIONS.indexOf(video.playbackRate);
+        if (idx < SPEED_OPTIONS.length - 1) video.setPlaybackRate(SPEED_OPTIONS[idx + 1]);
+      }),
+      cmds.register('start-calibration', () => { video.setPlaying(false); cal.startCalibration(); }),
+      cmds.register('toggle-distance', () => { video.setPlaying(false); meas.toggleMeasuringDistance(); }),
+      cmds.register('toggle-angle', () => { video.setPlaying(false); meas.toggleMeasuringAngle(); }),
+      cmds.register('toggle-pose', () => setPoseEnabled((v) => !v)),
+      cmds.register('toggle-trim-crop', () => { trimCrop.togglePanel(); zoom.resetTransform(); }),
+      cmds.register('toggle-pose-panel', () => setShowPosePanel((v) => !v)),
+      cmds.register('toggle-measurement-panel', () => meas.toggleMeasurementPanel()),
+      cmds.register('set-start-frame', () => { setStartFrame(video.currentFrameRef.current); ctxSetConfirmedSprintStart(video.currentFrameRef.current); }),
+      cmds.register('clear-start-frame', () => { setStartFrame(null); ctxSetConfirmedSprintStart(null); }),
+      cmds.register('reset-sprint', () => resetSprintAnalysis()),
+      cmds.register('upload-video', () => video.handleUploadClick()),
+    ];
+    return () => unsubs.forEach((u) => u());
+  }); // intentionally no deps — re-registers every render to capture latest closures
 
   // ── Status bar ─────────────────────────────────────────────────────────
   const { set: setStatus, clear: clearStatus } = useStatus();

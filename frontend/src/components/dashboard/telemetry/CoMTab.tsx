@@ -169,7 +169,7 @@ export function CoMTab({
       {comEvents.length > 0 && (
         <>
           <SectionHead label="Recorded Events" color={color} />
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto scrollbar-thin">
             <table className="w-full text-xs font-mono border-collapse">
               <thead>
                 <tr className="border-b border-zinc-200 dark:border-zinc-800">

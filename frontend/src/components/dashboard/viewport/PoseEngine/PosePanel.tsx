@@ -56,7 +56,7 @@ export const PosePanel = ({
         </div>
 
         {/* Landmark list grouped by region */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto scrollbar-thin">
           {REGIONS.map(({ key, label }) => {
             const regionLandmarks = LANDMARKS.filter((l) => l.region === key);
             const allOn = regionLandmarks.every((l) => visibilityMap[l.index]);

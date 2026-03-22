@@ -103,7 +103,7 @@ export const Telemetry = () => {
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0 overscroll-contain">
+      <div className="flex-1 overflow-y-auto min-h-0 overscroll-contain scrollbar-thin">
         {/* ── Steps ───────────────────────────────────────────────────── */}
         {tab === 'steps' && (
           <ContactsTab

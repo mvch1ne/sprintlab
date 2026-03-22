@@ -106,6 +106,21 @@ The `Timeline` component replaces the simple scrubber bar with a multi-lane, zoo
 
 A vertical playhead spans all lanes. When zoomed in, a minimap bar below the timeline shows the visible region within the full clip. The control section auto-sizes to its content rather than using a fixed height.
 
+### Command Palette
+
+`Ctrl+K` opens a searchable command palette (powered by [cmdk](https://cmdk.paco.me/)) that provides access to all major actions without reaching for buttons. Actions are grouped into categories:
+
+| Group | Examples |
+| ----- | -------- |
+| **Navigation** | Go to any workflow stage (also `1`–`5` keys) |
+| **Playback** | Play/pause, step, jump, set speed |
+| **Tools** | Start calibration, measure distance/angle, toggle pose, trim & crop |
+| **Sprint** | Set/clear start frame, reset sprint analysis |
+| **View** | Toggle telemetry, pose panel, measurement panel |
+| **File** | Upload video |
+
+Global keyboard shortcuts are handled by `useKeyboardShortcuts`, which reads from `CommandContext`. The Header shows a clickable `Ctrl+K` badge so new users can discover the palette.
+
 ## Stage-Based Workflow
 
 The UI is organised around five sequential stages. A `StageBar` at the top of the control section shows progress:
@@ -122,7 +137,7 @@ Stages are **navigational, not gatekeeping** — users can click any unlocked st
 
 ## State Management
 
-SprintLab uses three React Contexts rather than a global state library:
+SprintLab uses four React Contexts rather than a global state library:
 
 ### `UIContext`
 
@@ -147,9 +162,13 @@ The central data store. Holds:
 
 A minimal context for pose processing status: `idle | loading | ready | error`. Used by the Telemetry panel to decide what empty state to display.
 
-### Why three contexts?
+### `CommandContext`
 
-`VideoContext` is large — it covers video state, calibration, and metrics all in one place to avoid deeply nested prop drilling. `PoseContext` is kept separate because its state is only relevant to a small number of components and changes at a different lifecycle (only during inference). `UIContext` owns presentation-layer state (stage navigation, completion indicators) that multiple components need but that doesn't belong in the data-oriented `VideoContext`.
+A lightweight action registry. Components register named callbacks (e.g. `toggle-play`, `start-calibration`) and the `CommandPalette` and `useKeyboardShortcuts` hook read from this registry. This decouples action producers (Viewport, Dashboard) from consumers (palette, hotkeys) without adding more fields to VideoContext.
+
+### Why four contexts?
+
+`VideoContext` is large — it covers video state, calibration, and metrics all in one place to avoid deeply nested prop drilling. `PoseContext` is kept separate because its state is only relevant to a small number of components and changes at a different lifecycle (only during inference). `UIContext` owns presentation-layer state (stage navigation, completion indicators) that multiple components need but that doesn't belong in the data-oriented `VideoContext`. `CommandContext` is a thin action bus — it only stores function references, not state, and avoids coupling the command palette to every component it can control.
 
 ## Visual System
 

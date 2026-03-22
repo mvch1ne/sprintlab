@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { HelpCircle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { HelpCircle, Search } from 'lucide-react';
 import { ThemeToggle } from './primitives/themeToggle';
 import { AppLogo } from './primitives/appLogo';
 import { HelpModal } from './HelpModal';
@@ -34,7 +34,19 @@ const Header = () => {
   return (
     <header className="h-10 w-full flex justify-items-start items-center px-3 border border-zinc-400 dark:border-zinc-600 bg-white dark:bg-zinc-950">
       <AppLogo />
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-3">
+        {/* Command palette trigger */}
+        <button
+          onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))}
+          className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer"
+          title="Command palette"
+        >
+          <Search size={13} />
+          <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-zinc-300 dark:border-zinc-600 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 leading-none">
+            Ctrl+K
+          </kbd>
+        </button>
+
         {isFullscreen && window.electronAPI && (
           <button
             onClick={() => window.electronAPI!.exitFullscreen()}

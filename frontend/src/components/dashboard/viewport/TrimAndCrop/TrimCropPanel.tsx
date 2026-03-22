@@ -175,7 +175,7 @@ export const TrimCropPanel = ({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto scrollbar-thin">
           {/* ── Trim ─────────────────────────────────────────── */}
           <div className="border-b border-zinc-200 dark:border-zinc-800">
             <div className="flex items-center gap-2 px-3 py-1 bg-zinc-50 dark:bg-zinc-900">
