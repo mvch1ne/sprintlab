@@ -14,9 +14,9 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-const TELEMETRY_MIN = 260; // px
+const TELEMETRY_MIN = 350; // px
 const TELEMETRY_MAX = 480; // px
-const TELEMETRY_DEFAULT = 260; // px
+const TELEMETRY_DEFAULT = 350; // px
 const COLLAPSED_WIDTH = 20; // px — slim strip
 
 export const Dashboard = () => {
