@@ -4,6 +4,12 @@
 
 - Windows and maybe some antivirus software seems to be treating the software like malware - affecting the installation for some people. How do we build the .exe so that everything checks out, installs and runs smoothly?
 
+- Some users have issues with installation. Need to create a YouTube video walking through the troubleshooting of likely issues.
+
+- Update the docs for the backend. It's still talking about Body with feet instead of wholebody3d model
+
+- Most of the install issue seems to come from the backend server. This is major but should I consider re-writing everything so that we don't use FastAPI but just run the Python script for the pose? How do we get the data to the front-end, then? How do I stream the SSE data? Would this make things faster too? Wait - sockets?
+
 ### UI Revamp
 
 - Phase 0: Foundation — ✅ Done. Extracted 7 hooks from Viewport (1575→889 lines), split Telemetry into 5 sub-components (1309→244 lines), split ControlPanel into 6 sub-components (613→257 lines). UIContext deferred to Phase 1.
