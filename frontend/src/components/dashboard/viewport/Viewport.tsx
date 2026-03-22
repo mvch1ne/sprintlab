@@ -3,6 +3,7 @@ import { FilePlayIcon, Clock, Upload, Layers, Box, Pencil, Eye, EyeOff, Zap, Act
 import { IconDimensions } from '@tabler/icons-react';
 import { VideoLayer } from './VideoLayer';
 import { ControlPanel } from './ControlPanel';
+import { StageBar } from './StageBar';
 import { CalibrationOverlay } from './CalibrationAndMeasurements/CalibrationOverlay';
 import { MeasurementOverlay } from './CalibrationAndMeasurements/MeasurementOverlay';
 import { MeasurementPanel } from './CalibrationAndMeasurements/MeasurementPanel';
@@ -19,6 +20,7 @@ import { useExport } from './videoUtilities/useExport';
 import { useStatus } from './StatusBar/StatusContext';
 import { useVideoContext } from '../VideoContext';
 import { usePose } from '../PoseContext';
+import { useUI } from '../UIContext';
 import { useSprintMetrics } from '../useSprintMetrics';
 import {
   AlertDialog,
@@ -42,7 +44,7 @@ import { useCoM } from '../../../hooks/useCoM';
 import { useTrimCrop } from '../../../hooks/useTrimCrop';
 
 export const Viewport = () => {
-  const sectionHeights = { header: '1.25rem', controlSection: '12rem' };
+  const sectionHeights = { header: '1.25rem', controlSection: '13.75rem' };
   const exportingRef = useRef(false);
 
   // ── Pose ──────────────────────────────────────────────────────────────────
@@ -196,6 +198,40 @@ export const Viewport = () => {
   }, [sprint.metricsWithMerged, poseFrameW]);
 
   useEffect(() => { ctxSetProposedSprintStart(proposedSprintStartFrame); }, [proposedSprintStartFrame, ctxSetProposedSprintStart]);
+
+  // ── Publish to UIContext ──────────────────────────────────────────────
+  const { setCompletion, setHasVideo, setStage, stage } = useUI();
+
+  useEffect(() => {
+    const has = !!video.videoMeta;
+    setHasVideo(has);
+    // Auto-advance to calibrate when a video is first loaded
+    if (has && stage === 'import') setStage('calibrate');
+  }, [video.videoMeta, setHasVideo, setStage, stage]);
+
+  useEffect(() => {
+    setCompletion({
+      import: !!video.videoMeta,
+      calibrate: !!cal.calibration,
+      analyse: poseEnabled && poseStatus === 'ready',
+      measure:
+        meas.measurements.length > 0 ||
+        sprint.mergedContacts.length > 0 ||
+        !!sprintStart ||
+        !!sprintFinish,
+      report: false, // report is a viewing stage, not completable
+    });
+  }, [
+    video.videoMeta,
+    cal.calibration,
+    poseEnabled,
+    poseStatus,
+    meas.measurements.length,
+    sprint.mergedContacts.length,
+    sprintStart,
+    sprintFinish,
+    setCompletion,
+  ]);
 
   // Publish pose status into PoseContext
   const { setStatus: ctxSetPoseStatus } = usePose();
@@ -817,8 +853,10 @@ export const Viewport = () => {
 
       <input ref={video.fileInputRef} type="file" accept="video/*" className="hidden" onChange={video.handleFileChange} />
 
-      <div style={{ height: sectionHeights.controlSection }} className="border shrink-0">
+      <div style={{ height: sectionHeights.controlSection }} className="shrink-0">
+        <StageBar />
         <ControlPanel
+          stage={stage}
           currentFrame={video.currentFrame}
           totalFrames={totalFrames}
           fps={fps}

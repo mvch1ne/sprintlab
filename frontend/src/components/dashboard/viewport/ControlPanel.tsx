@@ -2,6 +2,7 @@ import { Scissors } from 'lucide-react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { CalibrationData } from './CalibrationAndMeasurements/CalibrationOverlay';
 import type { LandmarkerStatus } from './PoseEngine/usePoseLandmarker';
+import type { Stage } from '../UIContext';
 import { IconBtn, Readout, Separator } from './controls/shared';
 import { Scrubber } from './controls/Scrubber';
 import { PlaybackControls } from './controls/PlaybackControls';
@@ -10,6 +11,7 @@ import { PoseControls } from './controls/PoseControls';
 import { SprintStartRow, CoMControls } from './controls/SprintControls';
 
 interface ControlPanelProps {
+  stage: Stage;
   currentFrame: number;
   totalFrames: number;
   fps: number;
@@ -54,6 +56,7 @@ interface ControlPanelProps {
 }
 
 export function ControlPanel({
+  stage,
   currentFrame,
   totalFrames,
   fps,
@@ -113,27 +116,16 @@ export function ControlPanel({
   const absRelFrame = relativeFrame !== null ? Math.abs(relativeFrame) : null;
   const timePrefix = relativeFrame !== null && relativeFrame < 0 ? '\u2212' : '';
 
+  // Stage-aware opacity: controls outside the active stage are dimmed.
+  const dim = (stages: Stage[]) =>
+    stages.includes(stage) ? '' : 'opacity-40';
+
   return (
     <TooltipProvider delayDuration={400}>
       <div
         className={`ControlPanelContainer h-full w-full flex flex-col bg-white dark:bg-zinc-950 dark:text-zinc-200 transition-opacity ${disabled ? 'opacity-40 pointer-events-none' : ''}`}
       >
-        <div className="TopBar h-5 shrink-0 border border-b-0 border-zinc-400 dark:border-zinc-600 flex items-center px-3 gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-sky-500" />
-          <span className="text-[11px] uppercase tracking-[0.2em] text-zinc-700 dark:text-zinc-300">
-            Playback Control
-          </span>
-          <div className="ml-auto flex gap-1">
-            {[...Array(3)].map((_, i) => (
-              <div
-                key={i}
-                className="w-1 h-1 rounded-full bg-zinc-400 dark:bg-zinc-600"
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="MainControls flex-1 border border-t-0 border-zinc-400 dark:border-zinc-600 flex flex-col overflow-hidden">
+        <div className="MainControls flex-1 border border-zinc-400 dark:border-zinc-600 flex flex-col overflow-hidden">
           {/* Scrubber */}
           <Scrubber
             currentFrame={currentFrame}
@@ -145,12 +137,14 @@ export function ControlPanel({
           />
 
           {/* Sprint start row */}
-          <SprintStartRow
-            startFrame={startFrame}
-            proposedStartFrame={proposedStartFrame}
-            onSetStartFrame={onSetStartFrame}
-            onClearStartFrame={onClearStartFrame}
-          />
+          <div className={dim(['measure'])}>
+            <SprintStartRow
+              startFrame={startFrame}
+              proposedStartFrame={proposedStartFrame}
+              onSetStartFrame={onSetStartFrame}
+              onClearStartFrame={onClearStartFrame}
+            />
+          </div>
 
           {/* Readouts */}
           <div className="ReadoutsRow flex justify-between items-center px-4 pt-1 pb-0.5">
@@ -172,7 +166,7 @@ export function ControlPanel({
 
           <div className="mx-4 border-t border-zinc-400 dark:border-zinc-600/60" />
 
-          {/* Transport */}
+          {/* Transport — always visible (playback is stage-agnostic) */}
           <div className="ControlInputSection flex flex-1 items-center px-4 gap-2 flex-wrap">
             <PlaybackControls
               currentFrame={currentFrame}
@@ -189,64 +183,60 @@ export function ControlPanel({
 
             <Separator />
 
-            <CalibrationControls
-              calibration={calibration}
-              onStartCalibration={onStartCalibration}
-              measuringDistance={measuringDistance}
-              measuringAngle={measuringAngle}
-              onToggleMeasuringDistance={onToggleMeasuringDistance}
-              onToggleMeasuringAngle={onToggleMeasuringAngle}
-              measurementCount={measurementCount}
-              showMeasurementPanel={showMeasurementPanel}
-              onToggleMeasurementPanel={onToggleMeasurementPanel}
-            />
+            {/* Calibrate group */}
+            <div className={`flex items-center gap-2 transition-opacity ${dim(['calibrate', 'measure'])}`}>
+              <CalibrationControls
+                calibration={calibration}
+                onStartCalibration={onStartCalibration}
+                measuringDistance={measuringDistance}
+                measuringAngle={measuringAngle}
+                onToggleMeasuringDistance={onToggleMeasuringDistance}
+                onToggleMeasuringAngle={onToggleMeasuringAngle}
+                measurementCount={measurementCount}
+                showMeasurementPanel={showMeasurementPanel}
+                onToggleMeasurementPanel={onToggleMeasurementPanel}
+              />
+            </div>
 
             <Separator />
 
-            <PoseControls
-              poseEnabled={poseEnabled}
-              onTogglePose={onTogglePose}
-              poseStatus={poseStatus}
-              backendReachable={backendReachable}
-              showPosePanel={showPosePanel}
-              onTogglePosePanel={onTogglePosePanel}
-            />
+            {/* Analyse group */}
+            <div className={`flex items-center gap-2 transition-opacity ${dim(['analyse', 'measure', 'report'])}`}>
+              <PoseControls
+                poseEnabled={poseEnabled}
+                onTogglePose={onTogglePose}
+                poseStatus={poseStatus}
+                backendReachable={backendReachable}
+                showPosePanel={showPosePanel}
+                onTogglePosePanel={onTogglePosePanel}
+              />
+            </div>
 
             <Separator />
 
-            <IconBtn
-              onClick={onToggleTrimCropPanel}
-              tooltip={showTrimCropPanel ? 'Hide trim & crop' : 'Trim & crop'}
-              active={showTrimCropPanel}
-            >
-              <Scissors size={14} />
-            </IconBtn>
+            {/* Report group */}
+            <div className={`flex items-center gap-2 transition-opacity ${dim(['report', 'import'])}`}>
+              <IconBtn
+                onClick={onToggleTrimCropPanel}
+                tooltip={showTrimCropPanel ? 'Hide trim & crop' : 'Trim & crop'}
+                active={showTrimCropPanel}
+              >
+                <Scissors size={14} />
+              </IconBtn>
+            </div>
 
-            <CoMControls
-              poseReady={poseReady}
-              showCoM={showCoM}
-              onToggleCoM={onToggleCoM}
-              comEventCount={comEventCount}
-              showCoMEvents={showCoMEvents}
-              onToggleCoMEvents={onToggleCoMEvents}
-              onRecordCoMEvent={onRecordCoMEvent}
-              onClearCoMEvents={onClearCoMEvents}
-            />
-
-            <div className="ml-auto flex items-center gap-2">
-              {[
-                ['\u2190\u2192', 'step'],
-                ['Space', 'play'],
-              ].map(([key, label]) => (
-                <div key={key} className="flex items-center gap-1">
-                  <span className="text-[11px] px-1 py-0.5 bg-zinc-100 border border-zinc-400 dark:bg-zinc-950 dark:border-zinc-600 rounded-sm text-zinc-700 dark:text-zinc-300 leading-none">
-                    {key}
-                  </span>
-                  <span className="text-[11px] text-zinc-700 dark:text-zinc-300 uppercase tracking-wide">
-                    {label}
-                  </span>
-                </div>
-              ))}
+            {/* Measure group */}
+            <div className={`flex items-center gap-2 transition-opacity ${dim(['measure'])}`}>
+              <CoMControls
+                poseReady={poseReady}
+                showCoM={showCoM}
+                onToggleCoM={onToggleCoM}
+                comEventCount={comEventCount}
+                showCoMEvents={showCoMEvents}
+                onToggleCoMEvents={onToggleCoMEvents}
+                onRecordCoMEvent={onRecordCoMEvent}
+                onClearCoMEvents={onClearCoMEvents}
+              />
             </div>
           </div>
         </div>

@@ -11,7 +11,7 @@ The frontend is a React 19 single-page application written in TypeScript, built 
 | Styling | TailwindCSS 4 + Figtree variable font |
 | UI primitives | Radix UI + Shadcn/ui |
 | Video processing | FFmpeg.js (WebAssembly) |
-| State | React Context (`VideoContext`, `PoseContext`) |
+| State | React Context (`UIContext`, `VideoContext`, `PoseContext`) |
 | Testing | Vitest 3 + jsdom + @testing-library/react |
 
 ## Directory Structure
@@ -41,6 +41,7 @@ frontend/src/
 │   │   │   │   ├── SprintControls.tsx
 │   │   │   │   ├── Scrubber.tsx
 │   │   │   │   └── shared.tsx
+│   │   │   ├── StageBar.tsx            # Workflow stage tabs with completion dots
 │   │   │   ├── Viewport.tsx           # Orchestrator — composes hooks + overlays
 │   │   │   └── ControlPanel.tsx       # Thin layout composing control groups
 │   │   ├── telemetry/
@@ -52,6 +53,7 @@ frontend/src/
 │   │   │   └── CoMTab.tsx             # Static + flying mode CoM analysis
 │   │   ├── useSprintMetrics.ts        # React hook — metrics computation
 │   │   ├── sprintMath.ts              # Pure math (no React)
+│   │   ├── UIContext.tsx               # Stage workflow + UI state
 │   │   ├── VideoContext.tsx
 │   │   └── PoseContext.tsx
 │   ├── layout/                        # Header, Dashboard shell
@@ -64,20 +66,21 @@ frontend/src/
 
 ```
 App
-└── Dashboard
-    ├── Viewport                ← left panel: orchestrator composing 7 hooks
+└── Dashboard                     ← wraps UIProvider → VideoProvider → PoseProvider
+    ├── Viewport                  ← right panel: orchestrator composing 7 hooks
     │   ├── VideoLayer
     │   ├── PoseOverlay
     │   ├── CalibrationOverlay
     │   ├── MeasurementOverlay
     │   ├── CropOverlay
-    │   └── ControlPanel        ← thin layout composing control sub-components
+    │   ├── StageBar              ← workflow stage tabs (Import → Report)
+    │   └── ControlPanel          ← stage-aware layout composing control groups
     │       ├── PlaybackControls
     │       ├── CalibrationControls
     │       ├── PoseControls
     │       ├── SprintControls
     │       └── Scrubber
-    └── Telemetry               ← right panel: tab shell composing sub-components
+    └── Telemetry                 ← left panel: tab shell composing sub-components
         ├── ContactsTab
         ├── JointRow + Sparkline
         └── CoMTab

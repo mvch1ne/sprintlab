@@ -5,6 +5,7 @@ import { Telemetry } from '../dashboard/telemetry/Telemetry';
 import { StatusProvider } from '../dashboard/viewport/StatusBar/StatusContext';
 import { VideoProvider } from '../dashboard/VideoContext';
 import { PoseProvider } from '../dashboard/PoseContext';
+import { UIProvider } from '../dashboard/UIContext';
 import { StatusBar } from '../dashboard/viewport/StatusBar/StatusBar';
 import {
   Tooltip,
@@ -67,6 +68,7 @@ export const Dashboard = () => {
   const currentWidth = telemetryOpen ? telemetryWidth : COLLAPSED_WIDTH;
 
   return (
+    <UIProvider>
     <VideoProvider>
       <PoseProvider>
         <StatusProvider>
@@ -160,5 +162,6 @@ export const Dashboard = () => {
         </StatusProvider>
       </PoseProvider>
     </VideoProvider>
+    </UIProvider>
   );
 };

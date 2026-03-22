@@ -9,14 +9,14 @@ from rtmlib import PoseTracker, Wholebody3d, draw_skeleton
 device = "cpu"
 backend = "onnxruntime"
 
-input_file = "./videos/hadid.mp4"
+input_file = "./videos/track_test.webm"
 
 cap = cv2.VideoCapture(input_file)
 
 # ⭐ Wholebody 3D tracker (important for stability)
 wholebody3d = PoseTracker(
     Wholebody3d,
-    det_frequency=7,
+    det_frequency=1,
     tracking=False,
     backend=backend,
     device=device,

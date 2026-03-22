@@ -93,13 +93,35 @@ The Viewport renders multiple canvas overlays stacked on top of the video elemen
 
 The Telemetry panel is a thin tab shell that reads from `VideoContext` and delegates rendering to sub-components (`ContactsTab`, `CoMTab`, `JointRow`, `Sparkline`). A playhead drawn inside each sparkline tracks the current video frame.
 
+## Stage-Based Workflow
+
+The UI is organised around five sequential stages. A `StageBar` at the top of the control section shows progress:
+
+| Stage       | Purpose                                  | Completion condition                        |
+| ----------- | ---------------------------------------- | ------------------------------------------- |
+| **Import**  | Load a video file                        | Video metadata exists                       |
+| **Calibrate** | Set a scale reference (pixels → metres) | Calibration data set                        |
+| **Analyse** | Run pose estimation                      | Pose status = `ready`                       |
+| **Measure** | Place sprint markers, take measurements  | Any measurement, contact, or marker exists  |
+| **Report**  | Review telemetry, trim/crop, export      | N/A (viewing stage)                         |
+
+Stages are **navigational, not gatekeeping** — users can click any unlocked stage tab. Controls outside the active stage are dimmed (40% opacity) but remain interactive. The stage auto-advances from Import → Calibrate when a video is loaded.
+
 ## State Management
 
-SprintLab uses two React Contexts rather than a global state library:
+SprintLab uses three React Contexts rather than a global state library:
+
+### `UIContext`
+
+Manages the workflow stage and cross-component UI state:
+
+- `stage` — currently active stage tab (`import | calibrate | analyse | measure | report`)
+- `completion` — per-stage boolean flags derived from live state
+- `hasVideo` — whether a video file has been loaded (gates stage accessibility)
 
 ### `VideoContext`
 
-The central store. Holds:
+The central data store. Holds:
 
 - Video metadata (fps, total frames, frame dimensions)
 - Current frame index
@@ -112,9 +134,9 @@ The central store. Holds:
 
 A minimal context for pose processing status: `idle | loading | ready | error`. Used by the Telemetry panel to decide what empty state to display.
 
-### Why two contexts?
+### Why three contexts?
 
-`VideoContext` is large — it covers video state, calibration, and metrics all in one place to avoid deeply nested prop drilling. `PoseContext` is kept separate because its state is only relevant to a small number of components and changes at a different lifecycle (only during inference).
+`VideoContext` is large — it covers video state, calibration, and metrics all in one place to avoid deeply nested prop drilling. `PoseContext` is kept separate because its state is only relevant to a small number of components and changes at a different lifecycle (only during inference). `UIContext` owns presentation-layer state (stage navigation, completion indicators) that multiple components need but that doesn't belong in the data-oriented `VideoContext`.
 
 ## Design Decisions
 
