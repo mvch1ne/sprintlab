@@ -131,6 +131,7 @@ export const Telemetry = () => {
             reactionTimeEnabled={reactionTimeEnabled}
             setReactionTime={setReactionTime}
             setReactionTimeEnabled={setReactionTimeEnabled}
+            onSeekToFrame={seek}
           />
         )}
 
