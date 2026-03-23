@@ -28,7 +28,15 @@ SprintLab currently has no ground-truth validation against lab-grade instrumenta
 
 **Problem:** The double box filter (w=3) followed by central-difference differentiation and another box smooth creates an effective triangular kernel that introduces phase lag and significantly damps high-frequency content. Angular velocities and accelerations during the sharpest mechanical events — knee extension at toe-off, hip flexion entering recovery — are exactly what gets attenuated. The fixed window also ignores frame rate: the same kernel at 30fps and 120fps produces very different effective bandwidths.
 
-**Fix:** Replace the box filter with a Savitzky-Golay filter, which fits a local polynomial and preserves peak shape while still suppressing noise. Make the window width fps-adaptive: wider at low frame rates (more noise per mechanical event), narrower at high frame rates. Same computational complexity, substantially better preservation of the transient dynamics that define sprint technique.
+**Fix — joint angles and angular metrics:** Replace the box filter with a Savitzky-Golay filter, which fits a local polynomial and preserves peak shape while still suppressing noise. Make the window width fps-adaptive: wider at low frame rates (more noise per mechanical event), narrower at high frame rates. Same computational complexity, substantially better preservation of the transient dynamics that define sprint technique.
+
+**Fix — CoM horizontal position and velocity (different problem, different solution):** CoM horizontal position during a sprint is not a general signal — it is monotonically increasing by physics. This constraint changes the optimal approach entirely. The recommended pipeline, validated empirically across 2,400 simulated runs at multiple noise levels and frame rates, is:
+
+1. **Monotonicity pre-filter** — any frame where `x[i] < x[i-1]` is a physically impossible pose estimation artifact. Interpolate across it. This eliminates the noise conditions under which all smoothing methods degrade, and it is essentially free computationally.
+2. **Smoothing spline + analytic derivative** — fit a smoothing spline to the cleaned position data and differentiate it analytically. This avoids numerical differentiation error entirely. Median velocity RMSE: 0.045 m/s, versus 0.186 m/s for Savitzky-Golay under the same conditions.
+3. **Displacement constraint correction** — after computing the velocity curve, integrate it and compare to the known physical distance D between timing lines. Apply a uniform velocity offset to force `∫v(t)dt = D` exactly. This anchors the curve to independently measured physical reality without distorting the acceleration profile or peak velocity shape.
+
+Do not use Savitzky-Golay for CoM horizontal velocity. It is the right tool for joint angles; it is the wrong tool here. See the Sprint Timing & Velocity Engineering Specification for the full implementation, including TypeScript and Python code.
 
 ### 4. Frame-Rate-Limited Contact Timing
 
@@ -164,7 +172,7 @@ Computation:
 4. Propulsive phase velocity change: Δv_prop = v_to − v_mid. Should be positive.
 5. Report the ratio: |Δv_brake| / Δv_prop. Values near 0 = pure propulsion (early acceleration). Values near 1.0 = equilibrium (max velocity). Values above 1.0 = net deceleration (a problem).
 
-**Data quality caveat:** Per-contact velocity changes are small (often <0.5 m/s per contact at higher speeds). The CoM velocity is a derivative of a smoothed position estimate, so noise can be comparable to signal. The Kalman filter (limitation #1) and Savitzky-Golay smoothing (limitation #3) are effectively prerequisites for this metric to be reliable. Consider only displaying when the per-contact Δv exceeds a minimum threshold (e.g. >0.1 m/s) to avoid showing noise.
+**Data quality caveat:** Per-contact velocity changes are small (often <0.5 m/s per contact at higher speeds). The CoM velocity is a derivative of a smoothed position estimate, so noise can be comparable to signal. The Kalman filter (limitation #1) is a prerequisite at the keypoint level. For CoM horizontal velocity specifically, the smoothing spline with displacement constraint correction (described in limitation #3 and the Sprint Timing & Velocity Engineering Specification) is what makes per-contact velocity estimates reliable — the displacement constraint forces the velocity curve to be physically consistent with the known distance covered, which substantially reduces the error floor on small per-contact Δv values. Consider only displaying when the per-contact Δv exceeds a minimum threshold (e.g. >0.1 m/s) to avoid showing noise.
 
 #### Reactive Strength Index (Sprint)
 
