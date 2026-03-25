@@ -22,6 +22,41 @@
 - Phase 6: Split-View Comparison — Side-by-side or overlay dual-video mode with synced playback and telemetry diff for athlete comparison
 - Phase 7: Detachable Panels — Electron-only pop-out windows for telemetry/timeline on secondary monitors
 
+### Code Quality (from full-project review, 2026-03-25)
+
+#### Critical
+
+- [ ] **Add Error Boundaries** — Zero ErrorBoundary components in frontend. Any child throw (pose, FFmpeg, canvas) white-screens the app. Wrap Dashboard and Viewport.
+- [ ] **Split VideoContext** — 42 properties on one context causes excessive re-renders on every consumer. Split into VideoMetadata, SprintState, CoMState contexts.
+- [ ] **Backend input validation** — `/infer/video` accepts any file with no size limit, no type validation, no MIME check. Add file size cap, extension whitelist, and structured JSON error responses.
+- [ ] **Backend error handling** — Global `PoseTracker` init (server.py:23-29) has no try/catch; `cv2.VideoCapture` return not validated; `tracker()` inference unguarded. Add structured error handling throughout.
+
+#### High
+
+- [ ] **Refactor Viewport.tsx** — 30+ imports, 12+ useState, 8+ hooks. Extract domain logic into `usePoseSetup`, `useVideoSetup`, etc. Keep Viewport as thin orchestrator.
+- [ ] **Fix StatusBar force-update** — `setInterval(() => forceUpdate(n+1), 1000)` re-renders every second. Extract time display to isolated component or use ref.
+- [ ] **Backend: unblock event loop** — `tracker(frame)` is synchronous inside async endpoint (server.py:74). Use `asyncio.to_thread()`.
+- [ ] **Pin backend dependencies** — requirements.txt has zero version pins. Pin all, and split test deps (`pytest`, `httpx`) into `requirements-dev.txt`.
+- [ ] **Split backend monolith** — All 129 lines of server.py contain model init, routes, video decoding, inference, serialization. Separate into routes, services, config modules.
+
+#### Medium
+
+- [ ] **Consolidate PoseOverlay refs** — 17 separate refs + 17 useEffects to sync props. Replace with single `useLatest(props)` hook.
+- [ ] **Extract sparkline downsampling** — Identical logic in JointRow.tsx:20-23 and CoMTab.tsx:40-43. Create shared utility.
+- [ ] **Replace `any` casts** — `(window as any).electronAPI` in useFFmpeg.ts, `(import.meta as unknown as ...)` in usePoseLandmarker.ts. Create proper ElectronAPI and ImportMetaEnv type declarations.
+- [ ] **Remove suppressed unused vars** — Viewport.tsx:175-176 uses `void ctxSetReactionTime` to suppress lint. Remove the destructured values if unused.
+- [ ] **Fix silent error swallowing** — VideoLayer.tsx:207 `video.play().catch(() => {})` discards errors. At minimum log.
+- [ ] **Backend: replace print() with logging** — server.py uses `print('Hello')` and `print("✅ Wholebody3d ready")` instead of the logging module.
+- [ ] **Restrict CORS** — server.py:15-20 uses `allow_origins=["*"]`. Acceptable for desktop but should be tightened for any network exposure.
+
+#### Low
+
+- [ ] **Add CI test workflow** — Only docs.yml exists. Add workflow running `npm test`, `eslint`, `tsc`, and `pytest` on PRs.
+- [ ] **Add Prettier config** — ESLint only, no formatter for consistent style.
+- [ ] **Fix version mismatch** — Root package.json is 1.0.0, frontend is 0.0.0.
+- [ ] **Clean up serverlessTest/** — 7 experimental scripts with hardcoded paths and unprofessional filenames. Remove or move out of main repo.
+- [ ] **Add component & E2E tests** — Only pure math is tested. No React component tests or end-to-end tests.
+
 ### Metrics & Accuracy Improvements
 
 Based on limitations-improvement-paths.md — focusing on what's fixable now with existing data.
