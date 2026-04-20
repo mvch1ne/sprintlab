@@ -31,7 +31,7 @@ features:
 
 SprintLab is a web application for kinematic analysis of sprint videos. Upload a video, run pose estimation, calibrate a reference distance, and get a full breakdown of your sprint mechanics — joint angles, contact times, center-of-mass speed, and more.
 
-It was built by an athlete and engineer from Ghana, West Africa, where biomechanics labs and sports science infrastructure are essentially nonexistent. The goal is to give any athlete, anywhere, access to the kind of analysis that was previously only available in well-funded research settings.
+It was built by an athlete and engineer from Ghana, West Africa, where biomechanics labs and sports science infrastructure are essentially nonexistent. The goal is to give any athlete, anywhere, access to the kind of analysis that was previously only available in well-funded research settings - all for free.
 
 ## How to read these docs
 
