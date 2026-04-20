@@ -2,6 +2,7 @@
 
 ## Next Steps
 
+- Rehost docs
 - Windows and maybe some antivirus software seems to be treating the software like malware - affecting the installation for some people. How do we build the .exe so that everything checks out, installs and runs smoothly?
 
 - Some users have issues with installation. Need to create a YouTube video walking through the troubleshooting of likely issues.
